@@ -1,4 +1,4 @@
-"""sim2sim-locomotion: evaluate one locomotion policy across multiple simulators."""
+"""sim2sim: evaluate one locomotion policy across multiple simulators."""
 
 from .config import EvalCfg, ObsTerm, PolicyCfg, RobotCfg
 

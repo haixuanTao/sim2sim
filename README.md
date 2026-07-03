@@ -1,4 +1,4 @@
-# sim2sim-locomotion
+# sim2sim
 
 Evaluate **one** locomotion policy across **multiple physics simulators** —
 MuJoCo, PyBullet, mjlab (MuJoCo-Warp), Genesis, and Isaac Lab — and compare the
