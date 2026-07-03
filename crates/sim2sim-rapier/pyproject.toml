@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "sim2sim-rapier"
+version = "0.1.0"
+description = "Rapier (Rust) physics backend for the sim2sim locomotion harness"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+# Pure native extension: it only exposes the `sim2sim_rapier` module. The thin
+# Python adapter that plugs it into the harness ships in the core `sim2sim`
+# package (src/sim2sim/sim/rapier_adapter.py), so there is no runtime dep here.
+dependencies = []
+
+[tool.maturin]
+# Build the cdylib as the top-level `sim2sim_rapier` import module.
+module-name = "sim2sim_rapier"

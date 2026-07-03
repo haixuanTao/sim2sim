@@ -29,7 +29,7 @@
   <!-- ============================== FL ============================== -->
   <link name="FL_hip">
     <inertial><mass value="0.6"/><inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/></inertial>
-    <collision><origin xyz="0 0.03 0"/><geometry><cylinder radius="0.025" length="0.06"/></geometry><origin rpy="1.5708 0 0"/></collision>
+    <collision><origin xyz="0 0.03 0" rpy="1.5708 0 0"/><geometry><cylinder radius="0.025" length="0.06"/></geometry></collision>
   </link>
   <link name="FL_thigh">
     <inertial><origin xyz="0 0 -0.09"/><mass value="0.9"/><inertia ixx="0.003" iyy="0.003" izz="0.0005" ixy="0" ixz="0" iyz="0"/></inertial>

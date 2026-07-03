@@ -1,0 +1,17 @@
+[package]
+name = "sim2sim-rapier"
+version = "0.1.0"
+edition = "2021"
+description = "Rapier (Rust) physics backend for the sim2sim locomotion harness"
+license = "MIT"
+
+[lib]
+# Import name on the Python side: `import sim2sim_rapier`.
+name = "sim2sim_rapier"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.29", features = ["extension-module"] }
+rapier3d = "0.33"
+rapier3d-urdf = "0.33"
+nalgebra = "0.34"

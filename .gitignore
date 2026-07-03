@@ -19,3 +19,7 @@ venv/
 # Models / converted assets
 *.onnx
 /tmp/sim2sim_isaac/
+
+# Rust build artifacts (Rapier backend); Cargo.lock is kept for reproducibility
+target/
+crates/**/target/

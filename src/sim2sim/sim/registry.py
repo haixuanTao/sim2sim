@@ -19,6 +19,7 @@ _REGISTRY: dict[str, tuple[str, str]] = {
     "mjlab": ("sim2sim.sim.mjlab_adapter", "MjlabSimulator"),
     "genesis": ("sim2sim.sim.genesis_adapter", "GenesisSimulator"),
     "isaaclab": ("sim2sim.sim.isaaclab_adapter", "IsaacLabSimulator"),
+    "rapier": ("sim2sim.sim.rapier_adapter", "RapierSimulator"),
 }
 
 

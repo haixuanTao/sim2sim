@@ -9,7 +9,7 @@ from sim2sim.sim import registry
 
 def test_all_backends_registered():
     names = registry.registered_names()
-    assert set(names) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab"}
+    assert set(names) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab", "rapier"}
 
 
 def test_unknown_backend_raises():
@@ -19,7 +19,7 @@ def test_unknown_backend_raises():
 
 def test_availability_is_bool_map():
     avail = registry.availability(list(registry.registered_names()))
-    assert set(avail) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab"}
+    assert set(avail) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab", "rapier"}
     assert all(isinstance(v, bool) for v in avail.values())
 
 

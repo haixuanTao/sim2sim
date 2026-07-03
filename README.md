@@ -55,6 +55,7 @@ Adding a new simulator is one file implementing the
 |-----------|---------|----------|-------------------|
 | **MuJoCo** | `pip install mujoco` | CPU | ✅ yes (reference backend) |
 | **PyBullet** | `pip install pybullet` | CPU | ✅ yes |
+| **Rapier** (Rust) | `maturin develop -m crates/sim2sim-rapier/Cargo.toml` | CPU | ✅ yes (native crate) |
 | **mjlab** | `pip install mjlab` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 | **Genesis** | `pip install genesis-world` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 | **Isaac Lab** | NVIDIA Isaac Sim stack (out-of-band) | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
