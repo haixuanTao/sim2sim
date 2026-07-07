@@ -9,7 +9,7 @@ from sim2sim.sim import registry
 
 def test_all_backends_registered():
     names = registry.registered_names()
-    assert set(names) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab"}
+    assert set(names) == {"mujoco", "pybullet", "mjlab", "genesis", "nexus", "isaaclab"}
 
 
 def test_unknown_backend_raises():
@@ -19,7 +19,7 @@ def test_unknown_backend_raises():
 
 def test_availability_is_bool_map():
     avail = registry.availability(list(registry.registered_names()))
-    assert set(avail) == {"mujoco", "pybullet", "mjlab", "genesis", "isaaclab"}
+    assert set(avail) == {"mujoco", "pybullet", "mjlab", "genesis", "nexus", "isaaclab"}
     assert all(isinstance(v, bool) for v in avail.values())
 
 
@@ -27,6 +27,7 @@ def test_gpu_backends_unavailable_without_cuda():
     # On a CPU host these must report unavailable (and never crash on import).
     assert registry.is_available("mjlab") is False
     assert registry.is_available("genesis") is False
+    assert registry.is_available("nexus") is False
     assert registry.is_available("isaaclab") is False
 
 
@@ -38,5 +39,5 @@ def test_get_class_imports_lazily():
 
 def test_gpu_adapter_modules_import():
     # GPU adapters must import cleanly on a CPU host (heavy deps are method-local).
-    for name in ("mjlab", "genesis", "isaaclab"):
+    for name in ("mjlab", "genesis", "nexus", "isaaclab"):
         assert registry.get_class(name).name == name

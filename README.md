@@ -1,8 +1,8 @@
 # sim2sim-locomotion
 
 Evaluate **one** locomotion policy across **multiple physics simulators** —
-MuJoCo, PyBullet, mjlab (MuJoCo-Warp), Genesis, and Isaac Lab — and compare the
-results side by side. Targets the **LeRobot legged** ecosystem: train a policy in
+MuJoCo, PyBullet, mjlab (MuJoCo-Warp), Genesis, Nexus, and Isaac Lab — and compare
+the results side by side. Targets the **LeRobot legged** ecosystem: train a policy in
 mjlab, then sim-to-sim check it everywhere.
 
 This is the classic **sim-to-sim** robustness check that sits between training
@@ -31,7 +31,7 @@ things are centralized and the simulators are kept deliberately thin:
                          ▲                                                    │
                          │  get_state()                          apply_torques()/step()
                          └────────────────  Simulator adapter  ──────────────┘
-                                  (mujoco | pybullet | genesis | isaaclab)
+                             (mujoco | pybullet | genesis | nexus | isaaclab)
 ```
 
 - A neutral [`RobotState`](src/sim2sim/sim/state.py) is the only thing adapters
@@ -57,6 +57,7 @@ Adding a new simulator is one file implementing the
 | **PyBullet** | `pip install pybullet` | CPU | ✅ yes |
 | **mjlab** | `pip install mjlab` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 | **Genesis** | `pip install genesis-world` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
+| **Nexus** | `pip install dimforge-nexus3d` | **GPU (WebGPU)** | 🚧 integrated, not yet eval-runnable |
 | **Isaac Lab** | NVIDIA Isaac Sim stack (out-of-band) | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 
 [**mjlab**](https://github.com/mujocolab/mjlab) (MuJoCo-Warp, Isaac Lab-style
@@ -66,6 +67,15 @@ Isaac Lab adapters are written against their real APIs but cannot execute on a
 CPU host. They are **import-guarded**: the registry reports them unavailable and
 skips them instead of crashing. Their live behavior is validated on a GPU host
 (see [GPU runbook](#gpu-runbook)).
+
+[**Nexus**](https://github.com/dimforge/nexus) is dimforge's GPU (WebGPU) engine —
+"Rapier on the GPU" — with `nexus3d` Python bindings. It is **registered but not
+yet eval-runnable**: the current bindings expose world setup + MJCF loading but
+not the per-joint torque input or CPU state read-back the [`Simulator`](src/sim2sim/sim/base.py)
+contract needs (`NexusViewer` is a windowed viewer with no off-screen read-back).
+`NexusSimulator.is_available()` probes for those methods and reports unavailable
+until dimforge adds them, so it is skipped rather than half-run. See
+[`nexus_adapter.py`](src/sim2sim/sim/nexus_adapter.py) for details.
 
 ---
 
@@ -80,6 +90,7 @@ pip install -e ".[mujoco]"
 pip install -e ".[pybullet]"
 pip install -e ".[mjlab]"       # GPU host (LeRobot legged training sim)
 pip install -e ".[genesis]"     # GPU host
+pip install -e ".[nexus]"       # GPU host (dimforge Nexus / WebGPU)
 # Isaac Lab is installed via the NVIDIA Isaac Sim installer, not this extra.
 
 # everything for development (tests, lint, both CPU sims, onnx)
@@ -126,7 +137,7 @@ meaningful comparison.)
 ## Bundled robots
 
 Two config-driven robots ship in the box, each as **both MJCF** (MuJoCo / mjlab /
-Genesis) **and URDF** (PyBullet; Isaac converts URDF→USD) so the **same
+Genesis / Nexus) **and URDF** (PyBullet; Isaac converts URDF→USD) so the **same
 morphology** loads in every backend:
 
 | Robot | Config | DOF | Notes |
@@ -202,6 +213,9 @@ sim2sim eval --config configs/eval_lerobot.yaml --sims mujoco,mjlab
 pip install -e ".[genesis,report]"          # Genesis
 sim2sim eval --config configs/eval_lerobot.yaml --sims mujoco,pybullet,genesis
 
+# Nexus (dimforge / WebGPU): pip install -e ".[nexus]" — registered but not yet
+# eval-runnable (see availability matrix); skipped by the registry for now.
+
 # Isaac Lab: install Isaac Sim + Isaac Lab per NVIDIA docs, then run with the
 # Isaac Lab python:
 ./isaaclab.sh -p -m sim2sim.cli eval --config configs/eval_lerobot.yaml --sims isaaclab
@@ -227,8 +241,8 @@ end-to-end MuJoCo + PyBullet rollouts.
 ```
 src/sim2sim/
   config.py                # dataclasses + YAML loader
-  sim/                     # Simulator ABC, RobotState, registry, 5 adapters:
-                           #   mujoco, pybullet, mjlab, genesis, isaaclab
+  sim/                     # Simulator ABC, RobotState, registry, 6 adapters:
+                           #   mujoco, pybullet, mjlab, genesis, nexus, isaaclab
   obs/                     # ObservationBuilder + command generator
   control/                 # shared action->torque PD law
   policy/                  # Policy protocol, ONNX policy, baselines
