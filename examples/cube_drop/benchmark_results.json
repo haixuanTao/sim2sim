@@ -9,7 +9,7 @@
     "gpu_driver": "580.159.03",
     "gpu_vram": "16303 MiB"
   },
-  "generated": "2026-07-08T12:27:41",
+  "generated": "2026-07-08T13:04:41",
   "rows": [
     {
       "backend": "mujoco",
@@ -18,6 +18,7 @@
       "resolution": "640x480",
       "pipeline": "CPU physics + EGL render",
       "video": "cube_mujoco.mp4",
+      "video_url": "https://files.catbox.moe/yct6vx.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -27,6 +28,7 @@
       "resolution": "640x480",
       "pipeline": "GPU (MuJoCo-Warp) + host EGL render",
       "video": "cube_mjlab.mp4",
+      "video_url": "https://files.catbox.moe/2t1e04.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -36,6 +38,7 @@
       "resolution": "640x480",
       "pipeline": "GPU physics + render",
       "video": "cube_genesis.mp4",
+      "video_url": "https://files.catbox.moe/0k4r8o.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -45,6 +48,7 @@
       "resolution": "640x480",
       "pipeline": "CPU + TinyRenderer (software raster)",
       "video": "cube_pybullet.mp4",
+      "video_url": "https://files.catbox.moe/eyh0g5.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -54,6 +58,7 @@
       "resolution": "640x480",
       "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d)",
       "video": "cube_nexus.mp4",
+      "video_url": "https://files.catbox.moe/s8itel.mp4",
       "source": "measured 2026-07-08"
     },
     {
@@ -63,6 +68,7 @@
       "resolution": "640x480",
       "pipeline": "Rapier CPU physics + render() readback (patched kiss3d)",
       "video": "cube_nexus_cpu.mp4",
+      "video_url": "https://files.catbox.moe/s8itel.mp4",
       "source": "measured 2026-07-08"
     },
     {
@@ -74,6 +80,7 @@
       "resolution": "480x360",
       "spp": 96,
       "video": "cube_rt_mujoco.mp4",
+      "video_url": "https://files.catbox.moe/9klizd.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -85,6 +92,7 @@
       "resolution": "480x360",
       "spp": 96,
       "video": "cube_rt_pybullet.mp4",
+      "video_url": "https://files.catbox.moe/9b39vv.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -96,6 +104,7 @@
       "resolution": "480x360",
       "spp": 96,
       "video": "cube_rt_mjlab.mp4",
+      "video_url": "https://files.catbox.moe/toi5m3.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -107,6 +116,7 @@
       "resolution": "480x360",
       "spp": 96,
       "video": "cube_rt_genesis.mp4",
+      "video_url": "https://files.catbox.moe/3kyw9l.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -128,6 +138,7 @@
       "spp": 64,
       "pipeline": "Omniverse RTX PathTracing",
       "video": "cube_rt_isaac_native.mp4",
+      "video_url": "https://files.catbox.moe/zr5sma.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -140,6 +151,7 @@
       "spp": 64,
       "pipeline": "LuisaRender (CUDA)",
       "video": "cube_rt_genesis_native.mp4",
+      "video_url": "https://files.catbox.moe/qgub98.mp4",
       "source": "readme 2026-07-08"
     },
     {
@@ -151,6 +163,7 @@
       "spp": 64,
       "pipeline": "kiss3d 0.45 wgpu path tracer (patched kiss3d; tracing-bound)",
       "video": "cube_rt_nexus_native.mp4",
+      "video_url": "https://files.catbox.moe/h1vq9y.mp4",
       "source": "measured 2026-07-08"
     }
   ],

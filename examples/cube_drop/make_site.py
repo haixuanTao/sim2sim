@@ -69,8 +69,8 @@ def table_rows() -> str:
 def video_cards() -> str:
     cards = []
     for mode in MODE_LABEL:
-        group = [r for r in DATA["rows"] if r["mode"] == mode and r.get("video")
-                 and (HERE / r["video"]).exists()]
+        group = [r for r in DATA["rows"] if r["mode"] == mode
+                 and (r.get("video_url") or (r.get("video") and (HERE / r["video"]).exists()))]
         if not group:
             continue
         cards.append(f"<h3>{MODE_LABEL[mode]}</h3><div class='gallery'>")
@@ -80,7 +80,7 @@ def video_cards() -> str:
             spp = f" @ {r['spp']} spp" if r.get("spp") else ""
             cards.append(
                 f"""<figure>
-  <video src="../{r['video']}" controls loop muted playsinline></video>
+  <video src="{r.get('video_url') or '../' + r['video']}" controls loop muted playsinline></video>
   <figcaption><strong>{BACKEND_LABEL.get(r['backend'], r['backend'])}</strong> {badge}
   <span class="sub">{r.get('resolution', '')}{spp}</span></figcaption>
 </figure>"""
