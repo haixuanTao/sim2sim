@@ -46,12 +46,12 @@ KNOWN_RESULTS: list[dict] = [
      "pipeline": "GPU physics + render", "video": "cube_genesis.mp4", "video_url": "https://files.catbox.moe/0k4r8o.mp4"},
     {"backend": "pybullet", "mode": "raster", "fps": 29, "resolution": "640x480",
      "pipeline": "CPU + TinyRenderer (software raster)", "video": "cube_pybullet.mp4", "video_url": "https://files.catbox.moe/eyh0g5.mp4"},
-    {"backend": "nexus", "mode": "raster", "fps": 72.7, "resolution": "640x480",
-     "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d)",
-     "video": "cube_nexus.mp4", "video_url": "https://files.catbox.moe/s8itel.mp4", "source": "measured 2026-07-08"},
-    {"backend": "nexus_cpu", "mode": "raster", "fps": 59.9, "resolution": "640x480",
-     "pipeline": "Rapier CPU physics + render() readback (patched kiss3d)",
-     "video": "cube_nexus_cpu.mp4", "video_url": "https://files.catbox.moe/s8itel.mp4", "source": "measured 2026-07-08"},
+    {"backend": "nexus", "mode": "raster", "fps": 39.9, "resolution": "640x480",
+     "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d, real-time steps)",
+     "video": "cube_nexus.mp4", "video_url": "https://files.catbox.moe/l9id0j.mp4", "source": "measured 2026-07-08"},
+    {"backend": "nexus_cpu", "mode": "raster", "fps": 35.6, "resolution": "640x480",
+     "pipeline": "Rapier CPU physics + render() readback (patched kiss3d, real-time steps)",
+     "video": "cube_nexus_cpu.mp4", "video_url": "https://files.catbox.moe/u65fdl.mp4", "source": "measured 2026-07-08"},
     # mode "rt_shared": physics steps/s + shared Mitsuba/OptiX tracer.
     {"backend": "mujoco", "mode": "rt_shared", "physics_steps_s": 408_000, "fps": 35.0,
      "ms_per_frame": 29, "resolution": "480x360", "spp": 96, "video": "cube_rt_mujoco.mp4", "video_url": "https://files.catbox.moe/9klizd.mp4"},
@@ -70,10 +70,10 @@ KNOWN_RESULTS: list[dict] = [
     {"backend": "genesis", "mode": "rt_native", "physics_steps_s": 1_887, "fps": 14.3,
      "ms_per_frame": 70, "resolution": "480x368", "spp": 64,
      "pipeline": "LuisaRender (CUDA)", "video": "cube_rt_genesis_native.mp4", "video_url": "https://files.catbox.moe/qgub98.mp4"},
-    {"backend": "nexus", "mode": "rt_native", "fps": 4.3, "ms_per_frame": 234,
+    {"backend": "nexus", "mode": "rt_native", "fps": 3.8, "ms_per_frame": 262,
      "resolution": "480x368", "spp": 64,
      "pipeline": "kiss3d 0.45 wgpu path tracer (patched kiss3d; tracing-bound)",
-     "video": "cube_rt_nexus_native.mp4", "video_url": "https://files.catbox.moe/h1vq9y.mp4", "source": "measured 2026-07-08"},
+     "video": "cube_rt_nexus_native.mp4", "video_url": "https://files.catbox.moe/tvfh9g.mp4", "source": "measured 2026-07-08"},
 ]
 for _r in KNOWN_RESULTS:
     _r.setdefault("source", "readme 2026-07-08")

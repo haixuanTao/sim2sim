@@ -203,7 +203,8 @@ rows are each engine path-tracing its own scene. Not apples-to-apples across res
 <p class="sub">Nexus numbers use a patched kiss3d: its <code>read_pixels</code> converted pixels by
 indexing uncached mapped GPU memory per byte (~99 ms/frame at 640×480); converting from a cached
 row copy + reusing the staging buffer cut readback to ~5 ms (18×), lifting Nexus raster capture
-from 2.7 to 72.7 gen-fps — see
+from 2.7 to ~40 gen-fps (at real-time physics: 2 solver steps of 1/60 s per 30 fps frame,
+calibrated with the new <code>body_pose()</code> getter against analytic free fall) — see
 <a href="https://github.com/dimforge/kiss3d/pull/397">kiss3d #397 (readback fix)</a>,
 <a href="https://github.com/dimforge/nexus/pull/7">nexus #7 (frame export)</a> and
 <a href="https://github.com/dimforge/nexus/pull/8">nexus #8 (Python ray tracing)</a>.</p>

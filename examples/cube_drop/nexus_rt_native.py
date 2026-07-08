@@ -54,6 +54,9 @@ def main() -> None:
 
     state.finalize(viewer)
     state.set_rbd_gravity(viewer, nx.Vec3(0.0, -9.81, 0.0))
+    # Each solver step advances 1/60 s (verified via body_pose()); at 30 fps
+    # video we need two steps per frame or the clip plays in 0.5x slow motion.
+    state.set_rbd_steps_per_frame(2)
     viewer.add_directional_light(nx.Vec3(1.0, -3.0, 2.0))
     viewer.set_camera(nx.Vec3(6.0, 4.0, 6.0), nx.Vec3(0.0, 0.6, 0.0))
 

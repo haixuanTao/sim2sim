@@ -9,7 +9,7 @@
     "gpu_driver": "580.159.03",
     "gpu_vram": "16303 MiB"
   },
-  "generated": "2026-07-08T13:04:41",
+  "generated": "2026-07-08T13:14:33",
   "rows": [
     {
       "backend": "mujoco",
@@ -54,21 +54,21 @@
     {
       "backend": "nexus",
       "mode": "raster",
-      "fps": 72.7,
+      "fps": 39.9,
       "resolution": "640x480",
-      "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d)",
+      "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d, real-time steps)",
       "video": "cube_nexus.mp4",
-      "video_url": "https://files.catbox.moe/s8itel.mp4",
+      "video_url": "https://files.catbox.moe/l9id0j.mp4",
       "source": "measured 2026-07-08"
     },
     {
       "backend": "nexus_cpu",
       "mode": "raster",
-      "fps": 59.9,
+      "fps": 35.6,
       "resolution": "640x480",
-      "pipeline": "Rapier CPU physics + render() readback (patched kiss3d)",
+      "pipeline": "Rapier CPU physics + render() readback (patched kiss3d, real-time steps)",
       "video": "cube_nexus_cpu.mp4",
-      "video_url": "https://files.catbox.moe/s8itel.mp4",
+      "video_url": "https://files.catbox.moe/u65fdl.mp4",
       "source": "measured 2026-07-08"
     },
     {
@@ -157,13 +157,13 @@
     {
       "backend": "nexus",
       "mode": "rt_native",
-      "fps": 4.3,
-      "ms_per_frame": 234,
+      "fps": 3.8,
+      "ms_per_frame": 262,
       "resolution": "480x368",
       "spp": 64,
       "pipeline": "kiss3d 0.45 wgpu path tracer (patched kiss3d; tracing-bound)",
       "video": "cube_rt_nexus_native.mp4",
-      "video_url": "https://files.catbox.moe/h1vq9y.mp4",
+      "video_url": "https://files.catbox.moe/tvfh9g.mp4",
       "source": "measured 2026-07-08"
     }
   ],
