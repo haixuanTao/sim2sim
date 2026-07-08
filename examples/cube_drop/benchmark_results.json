@@ -9,7 +9,7 @@
     "gpu_driver": "580.159.03",
     "gpu_vram": "16303 MiB"
   },
-  "generated": "2026-07-08T15:58:32",
+  "generated": "2026-07-08T16:22:27",
   "rows": [
     {
       "backend": "mujoco",
@@ -153,6 +153,37 @@
       "video": "cube_rt_genesis_native.mp4",
       "video_url": "https://files.catbox.moe/qgub98.mp4",
       "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "mujoco",
+      "mode": "lerobot_raster",
+      "fps": 536,
+      "resolution": "640x480",
+      "pipeline": "CPU physics (PD stance hold) + EGL render",
+      "video": "lerobot_mujoco_real.mp4",
+      "video_url": "https://files.catbox.moe/ery9of.mp4",
+      "source": "measured 2026-07-08"
+    },
+    {
+      "backend": "nexus",
+      "mode": "lerobot_raster",
+      "fps": 4.7,
+      "resolution": "640x480",
+      "pipeline": "GPU (WebGPU) multibody, passive (no torque API) + render() readback",
+      "video": "lerobot_nexus.mp4",
+      "video_url": "https://files.catbox.moe/cvu5rg.mp4",
+      "source": "measured 2026-07-08"
+    },
+    {
+      "backend": "nexus",
+      "mode": "lerobot_rt",
+      "fps": 0.7,
+      "resolution": "640x480",
+      "spp": 64,
+      "pipeline": "kiss3d wgpu path tracer (per-frame mesh re-bake)",
+      "video": "lerobot_nexus_rt.mp4",
+      "video_url": "https://files.catbox.moe/hwl51w.mp4",
+      "source": "measured 2026-07-08"
     },
     {
       "backend": "nexus",

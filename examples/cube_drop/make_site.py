@@ -22,6 +22,8 @@ OUT = HERE / "site/index.html"
 MODE_LABEL = {
     "raster": "Rasterized (native renderer)",
     "rt_native": "Ray traced — engine's own path tracer",
+    "lerobot_raster": "LeRobot bipedal platform — rasterized",
+    "lerobot_rt": "LeRobot bipedal platform — path traced",
 }
 BACKEND_LABEL = {
     "mujoco": "MuJoCo", "pybullet": "PyBullet", "mjlab": "mjlab (MuJoCo-Warp)",
