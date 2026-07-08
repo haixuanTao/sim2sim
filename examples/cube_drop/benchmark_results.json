@@ -1,0 +1,189 @@
+{
+  "machine": {
+    "os": "Linux 6.17.0-35-generic",
+    "python": "3.11.12",
+    "cpu_cores": 24,
+    "cpu": "Intel(R) Core(TM) Ultra 9 275HX",
+    "ram_gb": 31,
+    "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+    "gpu_driver": "580.159.03",
+    "gpu_vram": "16303 MiB"
+  },
+  "generated": "2026-07-08T12:27:41",
+  "rows": [
+    {
+      "backend": "mujoco",
+      "mode": "raster",
+      "fps": 1684,
+      "resolution": "640x480",
+      "pipeline": "CPU physics + EGL render",
+      "video": "cube_mujoco.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "mjlab",
+      "mode": "raster",
+      "fps": 565,
+      "resolution": "640x480",
+      "pipeline": "GPU (MuJoCo-Warp) + host EGL render",
+      "video": "cube_mjlab.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "genesis",
+      "mode": "raster",
+      "fps": 332,
+      "resolution": "640x480",
+      "pipeline": "GPU physics + render",
+      "video": "cube_genesis.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "pybullet",
+      "mode": "raster",
+      "fps": 29,
+      "resolution": "640x480",
+      "pipeline": "CPU + TinyRenderer (software raster)",
+      "video": "cube_pybullet.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "nexus",
+      "mode": "raster",
+      "fps": 72.7,
+      "resolution": "640x480",
+      "pipeline": "GPU (WebGPU) physics + render() readback (patched kiss3d)",
+      "video": "cube_nexus.mp4",
+      "source": "measured 2026-07-08"
+    },
+    {
+      "backend": "nexus_cpu",
+      "mode": "raster",
+      "fps": 59.9,
+      "resolution": "640x480",
+      "pipeline": "Rapier CPU physics + render() readback (patched kiss3d)",
+      "video": "cube_nexus_cpu.mp4",
+      "source": "measured 2026-07-08"
+    },
+    {
+      "backend": "mujoco",
+      "mode": "rt_shared",
+      "physics_steps_s": 408000,
+      "fps": 35.0,
+      "ms_per_frame": 29,
+      "resolution": "480x360",
+      "spp": 96,
+      "video": "cube_rt_mujoco.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "pybullet",
+      "mode": "rt_shared",
+      "physics_steps_s": 317000,
+      "fps": 37.7,
+      "ms_per_frame": 27,
+      "resolution": "480x360",
+      "spp": 96,
+      "video": "cube_rt_pybullet.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "mjlab",
+      "mode": "rt_shared",
+      "physics_steps_s": 7000,
+      "fps": 38.5,
+      "ms_per_frame": 26,
+      "resolution": "480x360",
+      "spp": 96,
+      "video": "cube_rt_mjlab.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "genesis",
+      "mode": "rt_shared",
+      "physics_steps_s": 3300,
+      "fps": 37.7,
+      "ms_per_frame": 27,
+      "resolution": "480x360",
+      "spp": 96,
+      "video": "cube_rt_genesis.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "isaac",
+      "mode": "rt_shared",
+      "physics_steps_s": 5400,
+      "fps": 37.2,
+      "ms_per_frame": 27,
+      "resolution": "480x360",
+      "spp": 96,
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "isaac",
+      "mode": "rt_native",
+      "fps": 12,
+      "ms_per_frame": 83,
+      "resolution": "480x368",
+      "spp": 64,
+      "pipeline": "Omniverse RTX PathTracing",
+      "video": "cube_rt_isaac_native.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "genesis",
+      "mode": "rt_native",
+      "physics_steps_s": 1887,
+      "fps": 14.3,
+      "ms_per_frame": 70,
+      "resolution": "480x368",
+      "spp": 64,
+      "pipeline": "LuisaRender (CUDA)",
+      "video": "cube_rt_genesis_native.mp4",
+      "source": "readme 2026-07-08"
+    },
+    {
+      "backend": "nexus",
+      "mode": "rt_native",
+      "fps": 4.3,
+      "ms_per_frame": 234,
+      "resolution": "480x368",
+      "spp": 64,
+      "pipeline": "kiss3d 0.45 wgpu path tracer (patched kiss3d; tracing-bound)",
+      "video": "cube_rt_nexus_native.mp4",
+      "source": "measured 2026-07-08"
+    }
+  ],
+  "nexus_spp_sweep": {
+    "physics_step_sync": {
+      "ms": 5.02930873335572
+    },
+    "raster_render_frame": {
+      "ms": 3.6448294666721877
+    },
+    "raytrace_1spp": {
+      "ms": 3.9913764667289797,
+      "spp_per_s": 250.54013529811732
+    },
+    "raytrace_4spp": {
+      "ms": 10.420416199970836,
+      "spp_per_s": 383.86182694038604
+    },
+    "raytrace_16spp": {
+      "ms": 33.47264453332173,
+      "spp_per_s": 478.00226791379265
+    },
+    "raytrace_64spp": {
+      "ms": 122.43496736664383,
+      "spp_per_s": 522.7264839165233
+    },
+    "snap_rgb_readback": {
+      "ms": 3.5274503000740274,
+      "shape": [
+        368,
+        480,
+        3
+      ]
+    }
+  }
+}
