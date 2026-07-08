@@ -42,8 +42,8 @@ setup (model load / GPU pipeline compile).
 | mjlab | **565** | 150 / 0.27 s | 640×480 | GPU (MuJoCo-Warp) + host EGL render |
 | Genesis | **332** | 150 / 0.45 s | 640×480 | GPU physics + render |
 | PyBullet | **29** | 150 / 5.14 s | 640×480 | CPU + TinyRenderer (software raster) |
-| Nexus | **39.9** | 180 / 4.5 s | 640×480 | GPU (WebGPU) + `render()` readback (patched kiss3d, 2 steps/frame for real-time playback) |
-| Nexus (Rapier CPU) | **35.6** | 180 / 5.1 s | 640×480 | Rapier CPU physics + `render()` readback (patched kiss3d, 2 steps/frame) |
+| Nexus | **33.1** | 180 / 5.4 s | 640×480 | GPU (WebGPU) + `render()` readback (patched kiss3d, 2 steps/frame for real-time playback) |
+| Nexus (Rapier CPU) | **26.5** | 180 / 6.8 s | 640×480 | Rapier CPU physics + `render()` readback (patched kiss3d, 2 steps/frame) |
 
 **Read these numbers with the caveats:**
 
@@ -60,8 +60,13 @@ setup (model load / GPU pipeline compile).
 - **Time scale calibrated with `NexusViewer.body_pose()`**: each nexus solver
   step advances 1/60 s, so 30 fps videos need `set_rbd_steps_per_frame(2)` or
   they play at 0.5× (the cube now lands at frame 23, matching analytic free
-  fall's 22.9). At real-time playback: 39.9 gen-fps (WebGPU) vs 35.6 (Rapier
+  fall's 22.9). At real-time playback: 33.1 gen-fps (WebGPU) vs 26.5 (Rapier
   CPU) — before the readback fix both drowned at ~8.8 fps.
+- **Initial velocities were silently dropped** by the `from_rapier` bulk upload
+  (zero-filled velocity buffer), so `.angvel(...)` cubes fell without tumbling
+  until first contact — found with `body_pose()` (frozen quaternion during free
+  fall) and fixed in the `fix/initial-velocities-from-rapier` branch; rotation
+  now integrates at exactly |ω|·dt.
 - PyBullet's 29 fps is bounded by its CPU software rasterizer, not physics.
 
 ## Ray tracing
@@ -192,7 +197,7 @@ genesis/isaac native demos, via `NexusViewer(width, height)`):
 | path trace, 64 spp/call | 119 | 8.4 |
 | `snap_rgb()` readback | 57.5 | 17.4 |
 
-- End-to-end video generation at 64 spp: **3.8 fps (~262 ms/frame)** — same
+- End-to-end video generation at 64 spp: **4.2 fps (~236 ms/frame)** — same
   ballpark as Isaac (12 fps) and Genesis (14.3 fps) at the same resolution/spp.
 - The former bottleneck — frame readback — is fixed: kiss3d's `read_pixels`
   converted BGRA→RGB by indexing the *mapped* staging buffer per byte, and
