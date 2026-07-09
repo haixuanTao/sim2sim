@@ -5,7 +5,7 @@ policy: policy/lerobot_legs_flat.yaml
 
 # All backends. mjlab/genesis/isaaclab are GPU-only and are auto-skipped on a
 # CPU host; mjlab is where the LeRobot legged policies are trained.
-sims: [mujoco, pybullet, mjlab, genesis, isaaclab]
+sims: [mujoco, mjlab, genesis, isaaclab]
 
 episodes: 5
 max_steps: 500

@@ -1,6 +1,6 @@
 # Cross-simulator check of the zealot walking_policy_v7 ONNX.
 robot: robot/lerobot_biped_v7.yaml
-policy: policy/zealot_biped_v7.yaml
+policy: policy/zealot_biped_v6.yaml
 sims: [mujoco, genesis]
 episodes: 50
 max_steps: 600

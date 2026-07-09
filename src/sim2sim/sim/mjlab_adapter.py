@@ -4,7 +4,7 @@ mjlab is the GPU-accelerated simulator (MuJoCo-Warp / MJWarp, Isaac Lab-style
 manager API) that the **LeRobot legged** stack — ``lerobot-legged-zoo`` and
 ``unitree_rl_mjlab`` — trains policies in. Including it as a backend makes this a
 true sim-to-sim check: train in mjlab, then evaluate the exported policy here in
-mjlab *and* MuJoCo/PyBullet/Genesis/Isaac.
+mjlab *and* MuJoCo/Genesis/Isaac.
 
 mjlab **requires an NVIDIA GPU + CUDA** and is not runnable on a CPU host (this
 environment, standard CI). The adapter targets the real ``mjlab.sim.Simulation``
@@ -88,7 +88,7 @@ class MjlabSimulator(Simulator):
     def total_mass(self) -> float:
         return float(np.sum(self._mj_model.body_mass))
 
-    def reset(self) -> RobotState:
+    def reset(self, init=None) -> RobotState:  # init noise: not yet wired for this backend
         import torch
 
         self.sim.reset()

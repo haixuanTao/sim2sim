@@ -4,7 +4,7 @@
 name: lerobot_legs
 
 mjcf_path: pkg://lerobot_legs/lerobot_legs.xml   # MuJoCo / mjlab / Genesis
-urdf_path: pkg://lerobot_legs/lerobot_legs.urdf  # PyBullet (+ Isaac via URDF->USD)
+urdf_path: pkg://lerobot_legs/lerobot_legs.urdf  # Isaac (URDF->USD)
 # usd_path: <set to a pre-converted USD to skip Isaac's URDF importer>
 
 # Canonical joint order — every adapter reports state / accepts torque in THIS order.

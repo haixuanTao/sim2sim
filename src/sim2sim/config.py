@@ -54,7 +54,7 @@ class RobotCfg:
 
     name: str
     mjcf_path: str  # MuJoCo / Genesis
-    urdf_path: str  # PyBullet (and Isaac via URDF->USD conversion)
+    urdf_path: str  # Isaac (via URDF->USD conversion)
     usd_path: str | None  # optional pre-converted USD for Isaac Lab
     joint_names: list[str]
     default_joint_pos: np.ndarray  # (n_dof,)
@@ -156,7 +156,7 @@ class EvalCfg:
 
     robot: str  # path to robot yaml (relative to this file)
     policy: str  # path to policy yaml
-    sims: list[str]  # e.g. ["mujoco", "pybullet"]
+    sims: list[str]  # e.g. ["mujoco", "genesis"]
     episodes: int = 5
     max_steps: int = 1000
     control_dt: float = 0.02  # 50 Hz policy rate
@@ -164,6 +164,10 @@ class EvalCfg:
     fall_height: float = 0.18  # base below this (m) counts as a fall
     fall_tilt: float = 0.7  # projected_gravity_z above this magnitude => tilted over
     render: bool = False
+    # Per-episode initial-state randomization (uniform half-ranges; 0 = off):
+    # joint_pos (rad), base_yaw (rad), base_height (m, upward), base_lin_vel
+    # (m/s), base_ang_vel (rad/s). Sampled from the episode seed in the runner.
+    init_noise: dict = field(default_factory=dict)
     config_dir: str = "."
 
     @classmethod
@@ -180,6 +184,7 @@ class EvalCfg:
             fall_height=float(d.get("fall_height", 0.18)),
             fall_tilt=float(d.get("fall_tilt", 0.7)),
             render=bool(d.get("render", False)),
+            init_noise=dict(d.get("init_noise", {}) or {}),
             config_dir=str(Path(path).resolve().parent),
         )
         return cfg

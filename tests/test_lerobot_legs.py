@@ -33,7 +33,7 @@ def test_eval_config_lists_mjlab():
     assert "mjlab" in cfg.sims  # the LeRobot legged training simulator
 
 
-@pytest.mark.parametrize("sim_name", ["mujoco", "pybullet"])
+@pytest.mark.parametrize("sim_name", ["mujoco"])
 def test_lerobot_legs_rolls_out(sim_name):
     if not registry.is_available(sim_name):
         pytest.skip(f"{sim_name} not installed")

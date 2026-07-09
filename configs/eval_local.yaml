@@ -1,7 +1,7 @@
 # Local sim-to-sim comparison on this box: CPU sims + the nexus (GPU) backend.
 robot: robot/lerobot_legs.yaml
 policy: policy/lerobot_legs_flat.yaml
-sims: [mujoco, pybullet, nexus]
+sims: [mujoco, nexus]
 episodes: 3
 max_steps: 400
 control_dt: 0.02

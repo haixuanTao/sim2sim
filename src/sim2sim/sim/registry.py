@@ -1,7 +1,7 @@
 """Simulator registry with availability probing.
 
 Maps backend names to adapter classes *lazily* — importing this module must not
-import mujoco/pybullet/genesis/isaac. The adapter class is only imported when
+import mujoco/genesis/isaac. The adapter class is only imported when
 asked for, and each adapter's ``is_available()`` probes its dependency without
 side effects so the CLI can report which requested sims can actually run.
 """
@@ -15,7 +15,6 @@ from .base import Simulator
 # name -> (module, class). Import is deferred until make()/availability().
 _REGISTRY: dict[str, tuple[str, str]] = {
     "mujoco": ("sim2sim.sim.mujoco_adapter", "MujocoSimulator"),
-    "pybullet": ("sim2sim.sim.pybullet_adapter", "PybulletSimulator"),
     "mjlab": ("sim2sim.sim.mjlab_adapter", "MjlabSimulator"),
     "genesis": ("sim2sim.sim.genesis_adapter", "GenesisSimulator"),
     "nexus": ("sim2sim.sim.nexus_adapter", "NexusSimulator"),

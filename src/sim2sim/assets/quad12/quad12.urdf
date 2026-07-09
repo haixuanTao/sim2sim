@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  quad12 URDF for PyBullet. Same 12-DOF topology and link geometry as
+  quad12 URDF (Isaac via URDF->USD). Same 12-DOF topology and link geometry as
   quad12.xml (MuJoCo) so the SAME policy faces the same robot in both sims.
   Joint order matches configs/robot/quad12.yaml.
 -->

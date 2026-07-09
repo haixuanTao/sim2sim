@@ -86,15 +86,21 @@ class MujocoSimulator(Simulator):
     def total_mass(self) -> float:
         return float(np.sum(self.model.body_mass))
 
-    def reset(self) -> RobotState:
+    def reset(self, init=None) -> RobotState:
         mujoco = self._mj
         mujoco.mj_resetData(self.model, self.data)
-        # Free joint qpos layout: [x y z qw qx qy qz].
-        self.data.qpos[0:3] = [0.0, 0.0, self.robot_cfg.base_height_init]
-        self.data.qpos[3:7] = [1.0, 0.0, 0.0, 0.0]
-        for adr, q in zip(self._joint_qpos_adr, self.robot_cfg.default_joint_pos, strict=True):
+        height = init.base_height if init else self.robot_cfg.base_height_init
+        quat = init.base_quat if init else (1.0, 0.0, 0.0, 0.0)
+        joint_pos = init.joint_pos if init else self.robot_cfg.default_joint_pos
+        # Free joint qpos layout: [x y z qw qx qy qz]; qvel: [vx vy vz wx wy wz].
+        self.data.qpos[0:3] = [0.0, 0.0, height]
+        self.data.qpos[3:7] = quat
+        for adr, q in zip(self._joint_qpos_adr, joint_pos, strict=True):
             self.data.qpos[adr] = float(q)
         self.data.qvel[:] = 0.0
+        if init is not None:
+            self.data.qvel[0:3] = init.base_lin_vel
+            self.data.qvel[3:6] = init.base_ang_vel
         mujoco.mj_forward(self.model, self.data)
         return self.get_state()
 

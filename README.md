@@ -1,7 +1,7 @@
 # sim2sim-locomotion
 
 Evaluate **one** locomotion policy across **multiple physics simulators** —
-MuJoCo, PyBullet, mjlab (MuJoCo-Warp), Genesis, Nexus, and Isaac Lab — and compare
+MuJoCo, mjlab (MuJoCo-Warp), Genesis, Nexus, and Isaac Lab — and compare
 the results side by side. Targets the **LeRobot legged** ecosystem: train a policy in
 mjlab, then sim-to-sim check it everywhere.
 
@@ -31,7 +31,7 @@ things are centralized and the simulators are kept deliberately thin:
                          ▲                                                    │
                          │  get_state()                          apply_torques()/step()
                          └────────────────  Simulator adapter  ──────────────┘
-                             (mujoco | pybullet | genesis | nexus | isaaclab)
+                             (mujoco | genesis | nexus | isaaclab)
 ```
 
 - A neutral [`RobotState`](src/sim2sim/sim/state.py) is the only thing adapters
@@ -54,7 +54,6 @@ Adding a new simulator is one file implementing the
 | Simulator | Install | Hardware | Runs in CI / here |
 |-----------|---------|----------|-------------------|
 | **MuJoCo** | `pip install mujoco` | CPU | ✅ yes (reference backend) |
-| **PyBullet** | `pip install pybullet` | CPU | ✅ yes |
 | **mjlab** | `pip install mjlab` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 | **Genesis** | `pip install genesis-world` | **NVIDIA GPU + CUDA** | ⚠️ GPU host only |
 | **Nexus** | `pip install dimforge-nexus3d` | **GPU (WebGPU)** | 🚧 integrated, not yet eval-runnable |
@@ -82,18 +81,17 @@ until dimforge adds them, so it is skipped rather than half-run. See
 ## Install
 
 ```bash
-# CPU backends (MuJoCo + PyBullet) + dev tools
+# CPU backend (MuJoCo) + dev tools
 pip install -e ".[all-cpu,report]"
 
 # or individually
 pip install -e ".[mujoco]"
-pip install -e ".[pybullet]"
 pip install -e ".[mjlab]"       # GPU host (LeRobot legged training sim)
 pip install -e ".[genesis]"     # GPU host
 pip install -e ".[nexus]"       # GPU host (dimforge Nexus / WebGPU)
 # Isaac Lab is installed via the NVIDIA Isaac Sim installer, not this extra.
 
-# everything for development (tests, lint, both CPU sims, onnx)
+# everything for development (tests, lint, MuJoCo, onnx)
 pip install -e ".[dev]"
 ```
 
@@ -107,19 +105,19 @@ sim2sim list-sims
 sim2sim eval --config configs/eval.yaml --out report
 
 # Restrict to specific simulators / policy kind
-sim2sim eval --config configs/eval.yaml --sims mujoco,pybullet --policy random
+sim2sim eval --config configs/eval.yaml --sims mujoco --policy random
 ```
 
 Output is a markdown table + bar-chart PNG in `report/`:
 
 ```
-| Metric              | mujoco          | pybullet        |
-|---------------------|-----------------|-----------------|
-| Survival rate ↑     | 1.000 ± 0.000   | 0.000 ± 0.000   |
-| Survival time (s) ↑ | 10.000 ± 0.000  | 0.220 ± 0.000   |
-| Distance (m) ↑      | 0.163 ± 0.000   | 0.005 ± 0.000   |
-| Lin-vel err ↓       | 0.620 ± 0.216   | 0.617 ± 0.218   |
-| ...                 | ...             | ...             |
+| Metric              | mujoco          |
+|---------------------|-----------------|
+| Survival rate ↑     | 1.000 ± 0.000   |
+| Survival time (s) ↑ | 10.000 ± 0.000  |
+| Distance (m) ↑      | 0.163 ± 0.000   |
+| Lin-vel err ↓       | 0.620 ± 0.216   |
+| ...                 | ...             |
 ```
 
 (The numbers above are the **random baseline** on the bundled toy robot — they
@@ -137,7 +135,7 @@ meaningful comparison.)
 ## Bundled robots
 
 Two config-driven robots ship in the box, each as **both MJCF** (MuJoCo / mjlab /
-Genesis / Nexus) **and URDF** (PyBullet; Isaac converts URDF→USD) so the **same
+Genesis / Nexus) **and URDF** (Isaac converts URDF→USD) so the **same
 morphology** loads in every backend:
 
 | Robot | Config | DOF | Notes |
@@ -159,7 +157,7 @@ LeRobot's legged stack — [`lerobot-legged-zoo`](https://huggingface.co/blog/Vi
 [`mjlab`](https://github.com/mujocolab/mjlab) (MuJoCo-Warp), and
 `unitree_rl_mjlab` (Unitree Go2/G1/H1) — trains locomotion policies in **mjlab**.
 This project lets you take such a policy and check it **sim-to-sim**: run it in
-mjlab *and* in MuJoCo/PyBullet/Genesis/Isaac and compare.
+mjlab *and* in MuJoCo/Genesis/Isaac and compare.
 
 ```bash
 # Evaluate the LeRobot Humanoid legs across all backends (GPU ones auto-skip on CPU)
@@ -211,7 +209,7 @@ pip install -e ".[mjlab,report]"            # mjlab (LeRobot legged training sim
 sim2sim eval --config configs/eval_lerobot.yaml --sims mujoco,mjlab
 
 pip install -e ".[genesis,report]"          # Genesis
-sim2sim eval --config configs/eval_lerobot.yaml --sims mujoco,pybullet,genesis
+sim2sim eval --config configs/eval_lerobot.yaml --sims mujoco,genesis
 
 # Nexus (dimforge / WebGPU): pip install -e ".[nexus]" — registered but not yet
 # eval-runnable (see availability matrix); skipped by the registry for now.
@@ -234,15 +232,15 @@ ruff format --check src tests
 
 The CPU suite covers the sim-to-sim contract directly: observation parity,
 deterministic actuation, the ONNX obs-dim contract, registry availability, and
-end-to-end MuJoCo + PyBullet rollouts.
+end-to-end MuJoCo rollouts.
 
 ## Layout
 
 ```
 src/sim2sim/
   config.py                # dataclasses + YAML loader
-  sim/                     # Simulator ABC, RobotState, registry, 6 adapters:
-                           #   mujoco, pybullet, mjlab, genesis, nexus, isaaclab
+  sim/                     # Simulator ABC, RobotState, registry, 5 adapters:
+                           #   mujoco, mjlab, genesis, nexus, isaaclab
   obs/                     # ObservationBuilder + command generator
   control/                 # shared action->torque PD law
   policy/                  # Policy protocol, ONNX policy, baselines
@@ -256,3 +254,7 @@ configs/  examples/  tests/
 ## License
 
 MIT.
+
+## TODO
+
+- [ ] Temporal Ray Tracing 

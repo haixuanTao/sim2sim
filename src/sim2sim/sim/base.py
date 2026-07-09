@@ -10,11 +10,47 @@ identical pipeline no matter which backend is underneath.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 
 import numpy as np
 
 from ..config import RobotCfg
 from .state import RobotState
+
+
+@dataclass
+class InitState:
+    """A perturbed initial state, sampled per-episode by the runner.
+
+    All values are absolute (not deltas), already combined with the robot's
+    canonical pose, so adapters just write them into the physics state.
+    ``base_quat`` is (w, x, y, z).
+    """
+
+    joint_pos: np.ndarray  # (n_dof,) rad
+    base_height: float
+    base_quat: np.ndarray = field(default_factory=lambda: np.array([1.0, 0.0, 0.0, 0.0]))
+    base_lin_vel: np.ndarray = field(default_factory=lambda: np.zeros(3))  # world frame
+    base_ang_vel: np.ndarray = field(default_factory=lambda: np.zeros(3))  # world frame
+
+    @classmethod
+    def sample(cls, rng: np.random.Generator, robot_cfg: RobotCfg, noise: dict) -> InitState:
+        """Sample around the canonical pose. ``noise`` keys (all optional, 0 = off):
+        joint_pos (rad), base_yaw (rad), base_height (m), base_lin_vel (m/s),
+        base_ang_vel (rad/s) — each a uniform half-range.
+        """
+        n = robot_cfg.n_dof
+        jp = np.asarray(robot_cfg.default_joint_pos, dtype=np.float64) + rng.uniform(
+            -noise.get("joint_pos", 0.0), noise.get("joint_pos", 0.0), n
+        )
+        yaw = rng.uniform(-noise.get("base_yaw", 0.0), noise.get("base_yaw", 0.0))
+        quat = np.array([np.cos(yaw / 2), 0.0, 0.0, np.sin(yaw / 2)])
+        h = robot_cfg.base_height_init + rng.uniform(0.0, noise.get("base_height", 0.0))
+        lv = rng.uniform(-1, 1, 3) * noise.get("base_lin_vel", 0.0)
+        lv[2] = 0.0  # keep the vertical axis calm; height jitter covers it
+        av = rng.uniform(-1, 1, 3) * noise.get("base_ang_vel", 0.0)
+        return cls(joint_pos=jp, base_height=float(h), base_quat=quat,
+                   base_lin_vel=lv, base_ang_vel=av)
 
 # Shared default for off-screen video capture, so every backend frames the robot
 # identically (a ~0.6 m biped). Adapters translate this to their renderer's API.
@@ -49,8 +85,13 @@ class Simulator(ABC):
         return None
 
     @abstractmethod
-    def reset(self) -> RobotState:
-        """Reset the robot to its initial standing pose; return the first state."""
+    def reset(self, init: InitState | None = None) -> RobotState:
+        """Reset the robot to its initial standing pose; return the first state.
+
+        ``init`` optionally perturbs the canonical pose (seeded by the episode's
+        RNG in the runner) so episodes don't all start bit-identical. Adapters
+        apply what they can and ignore fields they cannot express.
+        """
 
     @abstractmethod
     def apply_torques(self, tau: np.ndarray) -> None:

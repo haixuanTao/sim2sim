@@ -22,13 +22,23 @@ OUT = HERE / "site/index.html"
 MODE_LABEL = {
     "raster": "Rasterized (native renderer)",
     "rt_native": "Ray traced — engine's own path tracer",
-    "lerobot_raster": "LeRobot bipedal platform — rasterized",
-    "lerobot_rt": "LeRobot bipedal platform — path traced",
+    "lerobot_raster": "Rasterized (native renderer)",
+    "lerobot_rt": "Ray traced — engine's own path tracer",
+}
+MODE_SCENE = {
+    "raster": "Cube drop", "rt_native": "Cube drop",
+    "lerobot_raster": "LeRobot legs", "lerobot_rt": "LeRobot legs",
+}
+# Scene sections shown on the page, in order.
+SCENES = {
+    "Scene 1 — Cube drop (single rigid body)": ["raster", "rt_native"],
+    "Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)":
+        ["lerobot_raster", "lerobot_rt"],
 }
 BACKEND_LABEL = {
-    "mujoco": "MuJoCo", "pybullet": "PyBullet", "mjlab": "mjlab (MuJoCo-Warp)",
+    "mujoco": "MuJoCo", "mjlab": "mjlab (MuJoCo-Warp)",
     "genesis": "Genesis", "nexus": "Nexus (Rapier-on-GPU)",
-    "nexus_cpu": "Nexus (Rapier CPU)", "isaac": "Isaac Sim",
+    "nexus_cpu": "Nexus (Rapier CPU)", "nexus_cuda": "Nexus (cuda-oxide)", "nexus_cuda_graph": "Nexus (cuda-oxide + CUDA graph)", "isaac": "Isaac Sim",
 }
 
 
@@ -49,13 +59,14 @@ def table_rows() -> str:
     out = []
     for r in rows:
         if "error" in r:
-            cells = [BACKEND_LABEL.get(r["backend"], r["backend"]), MODE_LABEL[r["mode"]],
+            cells = [BACKEND_LABEL.get(r["backend"], r["backend"]),
+                     f"{MODE_SCENE[r['mode']]} — {MODE_LABEL[r['mode']]}",
                      f"<span class='err'>failed: {html.escape(r['error'][:80])}</span>",
                      "", "", "", "", gpu, r.get("source", "")]
         else:
             cells = [
                 BACKEND_LABEL.get(r["backend"], r["backend"]),
-                MODE_LABEL[r["mode"]],
+                f"{MODE_SCENE[r['mode']]} — {MODE_LABEL[r['mode']]}",
                 fmt(r.get("fps")),
                 fmt(r.get("ms_per_frame")),
                 fmt(r.get("physics_steps_s")),
@@ -70,11 +81,17 @@ def table_rows() -> str:
 
 def video_cards() -> str:
     cards = []
-    for mode in MODE_LABEL:
-        group = [r for r in DATA["rows"] if r["mode"] == mode
-                 and (r.get("video_url") or (r.get("video") and (HERE / r["video"]).exists()))]
-        if not group:
-            continue
+    for scene, modes in SCENES.items():
+        cards.append(f"<h2 class='scene'>{scene}</h2>")
+        cards.extend(_video_cards_for(mode) for mode in modes)
+    return "\n".join(cards)
+
+
+def _video_cards_for(mode: str) -> str:
+    cards = []
+    group = [r for r in DATA["rows"] if r["mode"] == mode
+             and (r.get("video_url") or (r.get("video") and (HERE / r["video"]).exists()))]
+    if group:
         cards.append(f"<h3>{MODE_LABEL[mode]}</h3><div class='gallery'>")
         for r in sorted(group, key=lambda r: -(r.get("fps") or 0)):
             fps = r.get("fps")
@@ -95,29 +112,32 @@ def fps_charts() -> str:
     """One horizontal bar chart per mode (small multiples — scales differ too
     much for one axis). Single series (fps), direct-labeled, linear scale."""
     sections = []
-    for mode, label in MODE_LABEL.items():
-        rows = sorted(
-            (r for r in DATA["rows"] if r["mode"] == mode and r.get("fps")),
-            key=lambda r: -r["fps"],
-        )
-        if not rows:
-            continue
-        vmax = max(r["fps"] for r in rows)
-        bars = "\n".join(
-            f"""<div class="bar-row" tabindex="0" title="{BACKEND_LABEL.get(r['backend'], r['backend'])}: {fmt(r['fps'])} fps ({r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''})">
-  <span class="bar-label">{BACKEND_LABEL.get(r['backend'], r['backend'])}<span class="sub"> {r.get('resolution', '')}</span></span>
+    for scene, modes in SCENES.items():
+        sections.append(f"<h2 class='scene'>{scene}</h2>")
+        sections.extend(_fps_chart_for(mode, MODE_LABEL[mode]) for mode in modes)
+    return "\n".join(sections)
+
+
+def _fps_chart_for(mode: str, label: str) -> str:
+    rows = sorted(
+        (r for r in DATA["rows"] if r["mode"] == mode and r.get("fps")),
+        key=lambda r: -r["fps"],
+    )
+    if not rows:
+        return ""
+    vmax = max(r["fps"] for r in rows)
+    bars = "\n".join(
+        f"""<div class="bar-row" tabindex="0" title="{BACKEND_LABEL.get(r['backend'], r['backend'])}: {fmt(r['fps'])} fps ({r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''})">
+  <span class="bar-label">{BACKEND_LABEL.get(r['backend'], r['backend'])}<span class="sub"> {r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''}</span></span>
   <span class="bar-track"><span class="bar" style="width:{max(100 * r['fps'] / vmax, 0.4):.1f}%"></span></span>
   <span class="bar-val">{fmt(r['fps'])} fps</span>
 </div>"""
-            for r in rows
-        )
-        sections.append(
-            f"""<h3>{label}</h3>
+        for r in rows
+    )
+    return f"""<h3>{label}</h3>
 <div class="chart" role="img" aria-label="Bar chart of render fps per backend, {label}">
 {bars}
 </div>"""
-        )
-    return "\n".join(sections)
 
 
 def main() -> None:
@@ -139,7 +159,7 @@ def main() -> None:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>sim2sim cube-drop benchmark</title>
+<title>sim2sim render benchmark</title>
 <style>
 :root {{
   --surface: #fcfcfb; --surface-2: #f1f1ee; --ink: #0b0b0b; --ink-2: #52514e;
@@ -155,6 +175,7 @@ body {{ margin: 0 auto; max-width: 1080px; padding: 2rem 1.25rem 4rem;
 h1 {{ font-size: 1.6rem; margin: 0 0 .25rem; }}
 h2 {{ font-size: 1.15rem; margin: 2.5rem 0 .5rem; }}
 h3 {{ font-size: 1rem; margin: 1.5rem 0 .5rem; color: var(--ink-2); }}
+h2.scene {{ margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }}
 .sub {{ color: var(--ink-2); font-size: .85rem; }}
 .tiles {{ display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }}
 .tile {{ background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
@@ -190,12 +211,15 @@ code {{ background: var(--surface-2); padding: .05rem .3rem; border-radius: 4px;
 </style>
 </head>
 <body>
-<h1>sim2sim cube-drop benchmark <span class="sub" style="font-size:1rem; font-weight:400;">— single scene, 1 env</span></h1>
-<p class="sub"><strong>Single-environment cube drop</strong>: one tilted cube dropped onto a plane in
-<strong>1 env</strong>, generated by six physics engines, rasterized and path-traced natively. This measures
-per-frame render/readback overhead — not the massively-parallel multi-env workloads the GPU engines
-(Genesis, mjlab, Isaac, Nexus) are designed for. Generated {DATA['generated']} by
-<code>examples/cube_drop/benchmark.py</code>.</p>
+<h1>sim2sim render benchmark <span class="sub" style="font-size:1rem; font-weight:400;">— 2 scenes, 1 env</span></h1>
+<p class="sub">Two single-environment scenes rendered by six physics engines, rasterized and
+path-traced natively: <strong>Scene 1</strong> a tilted cube dropped onto a plane, and
+<strong>Scene 2</strong> the real LeRobot bipedal platform (STL meshes, 12 DOF) holding a stance
+with its built-in PD servos. This measures per-frame render/readback overhead — not the
+massively-parallel multi-env workloads the GPU engines (Genesis, mjlab, Isaac, Nexus) are designed
+for. Isaac's LeRobot row runs with a pinned base (no open-loop static pose balances under PhysX's
+contact model; see <code>examples/lerobot_legs/isaac_render.py</code>). Generated
+{DATA['generated']} by <code>examples/cube_drop/benchmark.py</code>.</p>
 
 <div class="tiles">{tiles}</div>
 

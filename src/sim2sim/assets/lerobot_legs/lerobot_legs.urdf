@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  lerobot_legs URDF for PyBullet. Same 12-DOF bipedal topology and link geometry
+  lerobot_legs URDF (Isaac via URDF->USD). Same 12-DOF bipedal topology and link geometry
   as lerobot_legs.xml (MuJoCo/mjlab) so the SAME policy faces the same robot in
   every simulator. Joint order matches configs/robot/lerobot_legs.yaml.
   Stand-in for the LeRobot Humanoid legs; swap in lerobot-humanoid-model assets

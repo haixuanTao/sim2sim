@@ -75,9 +75,9 @@ def main() -> None:
         ms = 1000 * timeit(lambda: viewer.raytrace_frame())
         results[f"raytrace_{spp}spp"] = {"ms": ms, "spp_per_s": spp * 1000 / ms}
 
-    frame = viewer.render()
+    frame = viewer.snap_rgb()
     results["snap_rgb_readback"] = {
-        "ms": 1000 * timeit(lambda: viewer.render()),
+        "ms": 1000 * timeit(lambda: viewer.snap_rgb()),
         "shape": list(frame.shape),
     }
 

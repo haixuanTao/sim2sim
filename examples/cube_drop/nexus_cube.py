@@ -1,6 +1,6 @@
 """Cube-drop smoke demo — Nexus (dimforge, Rapier-on-GPU / WebGPU).
 
-Uses ``NexusViewer.render()`` to read each rendered frame back as an
+Uses ``NexusViewer.snap_rgb()`` to read each rendered frame back as an
 ``(H, W, 3)`` uint8 numpy array — exactly like ``mujoco.Renderer.render()`` or
 a Genesis ``camera.render()`` — and encodes them to an MP4.
 
@@ -30,12 +30,21 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cpu", action="store_true",
                     help="step physics with the Rapier CPU backend (needs a wheel built with --features cpu)")
+    ap.add_argument("--cuda", action="store_true",
+                    help="step physics with the native CUDA (cuda-oxide) backend (needs a wheel built with --features cuda)")
+    ap.add_argument("--cuda-graph", action="store_true",
+                    help="like --cuda, but capture the per-frame solver steps into a CUDA graph after warmup and replay it (one cuGraphLaunch per frame)")
     args = ap.parse_args()
 
-    viewer = nx.NexusViewer(W, H)
+    # Headless: no window, no swapchain — capture is not throttled by the
+    # display's vsync (a windowed viewer caps the loop at ~30 fps).
+    viewer = nx.NexusViewer(W, H, headless=True)
     viewer.set_draw_ui(False)  # keep the egui panel out of captured frames
     if args.cpu:
         viewer.with_cpu()
+        viewer.init_backend()
+    elif args.cuda or args.cuda_graph:
+        viewer.with_cuda()
         viewer.init_backend()
     pipeline = nx.NexusPipeline()
     pipeline.preload_pipelines(viewer)  # ~1 min: compiles the GPU pipelines
@@ -80,17 +89,39 @@ def main() -> None:
 
     ts = nx.GpuTimestamps(viewer, 2048)
 
+    # CUDA-graph mode: run a few plain frames so buffer sizes stabilize, then
+    # capture the per-frame solver-step sequence once; the loop replays it with
+    # a single cuGraphLaunch per frame (no per-dispatch host encode).
+    graphed = False
+    if args.cuda_graph:
+        for _ in range(5):
+            viewer.render_frame()
+            pipeline.simulate(viewer, state, None)
+            viewer.sync(state, None)
+        graphed = pipeline.capture_cuda_graph(viewer, state)
+        assert graphed, "CUDA graph capture failed (not on the CUDA backend?)"
+
     frames = []
     t0 = time.perf_counter()
     while len(frames) < N_FRAMES:
         if not viewer.render_frame():  # draw one frame + pump events
             break
-        pipeline.simulate(viewer, state, ts)  # advance the physics
+        if graphed:
+            pipeline.replay_cuda_graph()  # whole solver-step sequence, one launch
+        else:
+            pipeline.simulate(viewer, state, ts)  # advance the physics
         viewer.sync(state, ts)  # GPU -> renderer
-        frames.append(viewer.render())  # framebuffer -> (H, W, 3) uint8
+        # Pipelined readback: returns the previous frame (None on the first
+        # call) while this frame's GPU->CPU copy runs in the background.
+        frame = viewer.snap_rgb_async()
+        if frame is not None:
+            frames.append(frame)
+    frame = viewer.snap_rgb_flush()  # collect the last in-flight frame
+    if frame is not None and len(frames) < N_FRAMES:
+        frames.append(frame)
     gen_s = time.perf_counter() - t0
 
-    tag = "nexus-cpu" if args.cpu else "nexus"
+    tag = ("nexus-cpu" if args.cpu else "nexus-cuda-graph" if args.cuda_graph else "nexus-cuda" if args.cuda else "nexus")
     out = Path(__file__).parent / f"cube_{tag.replace('-', '_')}.mp4"
     imageio.mimsave(out, frames, fps=FPS)
     print(f"wrote {out}  ({len(frames)} frames @ {FPS}fps)")

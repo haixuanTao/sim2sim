@@ -2,7 +2,7 @@
 
 Loads the bundled 12-DOF LeRobot-legs biped MJCF with ``NexusState.insert_mjcf``
 (which auto-registers the render shapes, floor and camera) and records an MP4
-via ``NexusViewer.render()``. The nexus bindings expose no torque control yet,
+via ``NexusViewer.snap_rgb()``. The nexus bindings expose no torque control yet,
 so unlike ``mujoco_stand.py`` there is no PD stance hold — the robot starts in
 its standing pose and collapses passively, which still exercises the full
 multibody pipeline (free-fall + joint limits + contacts) and the renderer.
@@ -25,7 +25,10 @@ import nexus3d as nx
 DURATION_S = 5.0
 FPS = 30
 W, H = 640, 480
-RT_ACCUM, RT_SPP = 8, 8  # raytrace_frame() calls per video frame x spp each
+# One raytrace_frame() call per video frame at the full spp budget: each call
+# pays a denoise + tonemap pass, so batching samples into a single call is
+# strictly cheaper than accumulating across several calls.
+RT_ACCUM, RT_SPP = 1, 32  # 32 spp total, matching the Isaac/Genesis LeRobot RT rows
 
 REPO = Path(__file__).resolve().parents[2]
 # Real LeRobot humanoid legs (full STL meshes + position actuators); the
@@ -42,7 +45,8 @@ def main() -> None:
     ap.add_argument("--rt", action="store_true", help="path trace instead of rasterizing")
     args = ap.parse_args()
 
-    viewer = nx.NexusViewer(W, H)
+    # Headless: no window/swapchain, so capture is not vsync-throttled.
+    viewer = nx.NexusViewer(W, H, headless=True)
     viewer.set_draw_ui(False)
     viewer.init_backend()
     pipeline = nx.NexusPipeline()
@@ -63,6 +67,9 @@ def main() -> None:
         viewer.set_raytracer_samples_per_frame(RT_SPP)
         viewer.set_raytracer_max_bounces(6)
         viewer.set_raytracer_denoise(True)
+        # kiss3d defaults to half-resolution tracing while anything moves; trace
+        # full resolution so the benchmark matches the Isaac/Genesis rows.
+        viewer.set_raytracer_interactive_scale(1.0)
 
     ts = nx.GpuTimestamps(viewer, 2048)
     n_frames = int(DURATION_S * FPS)
@@ -76,7 +83,14 @@ def main() -> None:
                 break
         elif not viewer.render_frame():
             break
-        frames.append(viewer.render())
+        # Pipelined readback: returns the previous frame (None on the first
+        # call) while this frame's GPU->CPU copy runs in the background.
+        frame = viewer.snap_rgb_async()
+        if frame is not None:
+            frames.append(frame)
+    frame = viewer.snap_rgb_flush()  # collect the last in-flight frame
+    if frame is not None and len(frames) < n_frames:
+        frames.append(frame)
     gen_s = time.perf_counter() - t0
 
     tag = "nexus_rt" if args.rt else "nexus"

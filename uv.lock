@@ -2969,16 +2969,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pybullet"
-version = "3.2.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/de/95/b9a98cd4ed948d4f25a7d0b13cb0c1f87e58dc6d113be9e18940641eb25f/pybullet-3.2.7.tar.gz", hash = "sha256:042879db8d101ac7590dee475fc6aded508b85fe1273fdbbfde1d88bd200e14f", size = 80508379, upload-time = "2025-01-30T00:34:00.527Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/e0/45278c039635529fec27814e6ad9c5a87030161f5ce714e017dd70f562f9/pybullet-3.2.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:814e6b0c035a634b5c46f69065effb085cc451886dda4140576be2f34b461940", size = 103193654, upload-time = "2025-01-30T00:18:52.555Z" },
-    { url = "https://files.pythonhosted.org/packages/20/78/a23a300110968586a9dbfd516ccd66906450d57567c9f60cddaeaaf10fa6/pybullet-3.2.7-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5d858abf7c12a21ef3ed351cf81dac1b5e486ec25c9ab59bfc84beb89034edff", size = 103196742, upload-time = "2025-01-30T00:19:07.063Z" },
-]
-
-[[package]]
 name = "pycollada"
 version = "0.9.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3870,14 +3860,12 @@ dependencies = [
 [package.optional-dependencies]
 all-cpu = [
     { name = "mujoco" },
-    { name = "pybullet" },
 ]
 dev = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "matplotlib", version = "3.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "mujoco" },
     { name = "onnx" },
-    { name = "pybullet" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -3892,9 +3880,6 @@ mujoco = [
 ]
 nexus = [
     { name = "dimforge-nexus3d" },
-]
-pybullet = [
-    { name = "pybullet" },
 ]
 report = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -3914,14 +3899,11 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.23" },
     { name = "onnx", marker = "extra == 'dev'", specifier = ">=1.14" },
     { name = "onnxruntime", specifier = ">=1.15" },
-    { name = "pybullet", marker = "extra == 'all-cpu'", specifier = ">=3.2" },
-    { name = "pybullet", marker = "extra == 'dev'", specifier = ">=3.2" },
-    { name = "pybullet", marker = "extra == 'pybullet'", specifier = ">=3.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
 ]
-provides-extras = ["mujoco", "pybullet", "mjlab", "genesis", "nexus", "isaac", "all-cpu", "report", "dev"]
+provides-extras = ["mujoco", "mjlab", "genesis", "nexus", "isaac", "all-cpu", "report", "dev"]
 
 [[package]]
 name = "six"

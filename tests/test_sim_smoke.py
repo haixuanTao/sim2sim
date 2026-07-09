@@ -23,7 +23,7 @@ def _short_cfg() -> EvalCfg:
     return cfg
 
 
-@pytest.mark.parametrize("sim_name", ["mujoco", "pybullet"])
+@pytest.mark.parametrize("sim_name", ["mujoco"])
 def test_backend_smoke(sim_name):
     if not registry.is_available(sim_name):
         pytest.skip(f"{sim_name} not installed")

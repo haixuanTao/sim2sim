@@ -111,7 +111,7 @@ class IsaacLabSimulator(Simulator):
         except Exception:
             return 1.0
 
-    def reset(self) -> RobotState:
+    def reset(self, init=None) -> RobotState:  # init noise: not yet wired for this backend
         self.robot.reset()
         # Push the configured default state into the sim buffers.
         self.robot.write_data_to_sim()

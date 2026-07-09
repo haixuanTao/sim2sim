@@ -1,7 +1,7 @@
 # zealot walking_policy_v7 (github.com/haixuanTao/zealot, release biped-policy-v7).
 # Obs normalizer is baked into the ONNX graph, so every scale is 1.0. The
 # 45-dim layout and gait period follow the release MODEL_CARD.md exactly.
-onnx_path: /home/xavier/Documents/work/sim2sim/examples/lerobot_legs/policy/walking_policy_v7.onnx
+onnx_path: /home/xavier/Documents/work/sim2sim/examples/lerobot_legs/policy/walking_policy_v6.onnx
 
 obs_terms:
   - { name: last_action,           scale: 1.0 }   #  0-11
@@ -11,7 +11,7 @@ obs_terms:
   - { name: projected_gravity,     scale: 1.0 }   # 40-42
   - { name: gait_clock,            scale: 1.0 }   # 43-44
 
-gait_period: 0.9   # v7 (v6 uses 0.7)
+gait_period: 0.7   # v6
 gait_dt: 0.02      # 50 Hz policy rate
 
 command_ranges:   # sampled per-seed; within the training distribution

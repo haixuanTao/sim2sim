@@ -73,32 +73,6 @@ def _record_mujoco():
     return np.array(pos), np.array(quat), time.perf_counter() - t0, spf * N_FRAMES
 
 
-def _record_pybullet():
-    import pybullet as p
-    import pybullet_data
-
-    p.connect(p.DIRECT)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, -9.81)
-    dt = 1.0 / 240.0
-    p.setTimeStep(dt)
-    p.loadURDF("plane.urdf")
-    col = p.createCollisionShape(p.GEOM_BOX, halfExtents=[HALF] * 3)
-    orn = [Q0[1], Q0[2], Q0[3], Q0[0]]  # wxyz -> xyzw
-    cube = p.createMultiBody(1.0, col, basePosition=[0, 0, START_Z], baseOrientation=orn)
-    spf = max(1, round(FRAME_DT / dt))
-    pos, quat = [], []
-    t0 = time.perf_counter()
-    for _ in range(N_FRAMES):
-        for _ in range(spf):
-            p.stepSimulation()
-        xyz, o = p.getBasePositionAndOrientation(cube)
-        pos.append(xyz)
-        quat.append([o[3], o[0], o[1], o[2]])  # xyzw -> wxyz
-    dt_wall = time.perf_counter() - t0
-    p.disconnect()
-    return np.array(pos), np.array(quat), dt_wall, spf * N_FRAMES
-
 
 def _record_genesis():
     import genesis as gs
@@ -196,7 +170,6 @@ def _record_isaac():
 
 _RECORDERS = {
     "mujoco": _record_mujoco,
-    "pybullet": _record_pybullet,
     "genesis": _record_genesis,
     "mjlab": _record_mjlab,
     "isaac": _record_isaac,

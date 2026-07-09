@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "dora-rs contributors" }]
-keywords = ["robotics", "locomotion", "sim-to-sim", "reinforcement-learning", "mujoco", "pybullet", "genesis", "nexus", "isaac"]
+keywords = ["robotics", "locomotion", "sim-to-sim", "reinforcement-learning", "mujoco", "genesis", "nexus", "isaac"]
 
 # Core deps are deliberately tiny: a MuJoCo-only or Isaac-only user should never
 # be forced to install the other simulators. Backends live in extras below.
@@ -22,14 +22,13 @@ dependencies = [
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
-pybullet = ["pybullet>=3.2"]
 mjlab = ["mjlab"]                     # requires NVIDIA GPU + CUDA (MuJoCo-Warp); where LeRobot legged trains
 genesis = ["genesis-world>=0.2"]      # requires NVIDIA GPU + CUDA at runtime
 nexus = ["dimforge-nexus3d"]          # dimforge's GPU (WebGPU) engine; requires a GPU at runtime
 isaac = []                            # Isaac Lab is installed out-of-band (NVIDIA stack); see README
-all-cpu = ["mujoco>=3.0", "pybullet>=3.2"]
+all-cpu = ["mujoco>=3.0"]
 report = ["matplotlib>=3.6"]
-dev = ["pytest>=7.0", "ruff>=0.4", "matplotlib>=3.6", "mujoco>=3.0", "pybullet>=3.2", "onnx>=1.14"]
+dev = ["pytest>=7.0", "ruff>=0.4", "matplotlib>=3.6", "mujoco>=3.0", "onnx>=1.14"]
 
 [project.scripts]
 sim2sim = "sim2sim.cli:main"

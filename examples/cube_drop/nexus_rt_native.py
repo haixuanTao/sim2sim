@@ -24,7 +24,9 @@ W, H = 480, 368  # match the genesis/isaac native-RT demos
 
 
 def main() -> None:
-    viewer = nx.NexusViewer(W, H)
+    # Headless: no window/swapchain, so each raytrace_frame() accumulation
+    # pass is not throttled by the display's vsync.
+    viewer = nx.NexusViewer(W, H, headless=True)
     pipeline = nx.NexusPipeline()
     pipeline.preload_pipelines(viewer)
     state = nx.NexusState()
@@ -67,16 +69,25 @@ def main() -> None:
     ts = nx.GpuTimestamps(viewer, 2048)
 
     frames = []
-    rend_s = 0.0
+    # Headless + pipelined readback means raytrace_frame() only *submits* GPU
+    # work — timing it alone would measure the submit rate, not the tracing.
+    # Time the whole loop instead (physics + trace + readback, like the other
+    # backends' gen-fps).
+    t_loop = time.perf_counter()
     while len(frames) < N_FRAMES:
         pipeline.simulate(viewer, state, ts)
         viewer.sync(state, ts)
-        t0 = time.perf_counter()
-        ok = all(viewer.raytrace_frame() for _ in range(ACCUM_FRAMES))
-        rend_s += time.perf_counter() - t0
-        if not ok:
+        if not all(viewer.raytrace_frame() for _ in range(ACCUM_FRAMES)):
             break
-        frames.append(viewer.render())  # (H, W, 3) uint8 numpy array
+        # Pipelined readback: previous frame (None first call) while this
+        # frame's GPU->CPU copy runs in the background.
+        frame = viewer.snap_rgb_async()
+        if frame is not None:
+            frames.append(frame)
+    frame = viewer.snap_rgb_flush()
+    if frame is not None and len(frames) < N_FRAMES:
+        frames.append(frame)
+    rend_s = time.perf_counter() - t_loop
 
     out = Path(__file__).parent / "cube_rt_nexus_native.mp4"
     imageio.mimsave(out, frames, fps=FPS)

@@ -117,7 +117,7 @@ class NexusSimulator(Simulator):
     def dt(self) -> float:
         return self._dt
 
-    def reset(self) -> RobotState:
+    def reset(self, init=None) -> RobotState:  # init noise: not yet wired for this backend
         raise NotImplementedError(_UNSUPPORTED_MSG)
 
     def apply_torques(self, tau: np.ndarray) -> None:

@@ -9,7 +9,7 @@ torques:
     tau    = Kp * (target - q) - Kd * qd      (optionally clamped)
 
 Keeping this out of the adapters is essential: if MuJoCo used position servos
-and PyBullet used torque control, the "same" policy would behave differently for
+and Genesis used torque control, the "same" policy would behave differently for
 reasons that have nothing to do with the physics under test.
 """
 

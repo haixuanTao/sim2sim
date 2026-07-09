@@ -4,7 +4,7 @@ policy: policy/quad12_flat.yaml
 
 # Which simulators to evaluate on. Unavailable backends (e.g. GPU sims on a CPU
 # host) are reported and skipped, not fatal.
-sims: [mujoco, pybullet]
+sims: [mujoco, genesis]
 
 episodes: 5
 max_steps: 500

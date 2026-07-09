@@ -16,7 +16,7 @@ from ..control.actuation import PDController
 from ..obs.commands import CommandGenerator
 from ..obs.observation import ObservationBuilder
 from ..policy.base import Policy
-from ..sim.base import Simulator
+from ..sim.base import InitState, Simulator
 from .metrics import EpisodeMetrics, _Accumulator, aggregate
 
 
@@ -54,7 +54,12 @@ def run_episode(
 
     policy.reset()
     obs_builder.reset()
-    state = sim.reset()
+    init = (
+        InitState.sample(rng, robot_cfg, eval_cfg.init_noise)
+        if eval_cfg.init_noise
+        else None
+    )
+    state = sim.reset(init)
 
     pd = PDController(robot_cfg)
     acc = _Accumulator(

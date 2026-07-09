@@ -1,6 +1,6 @@
 """Cube-drop smoke demo — Genesis backend (GPU).
 
-Same scenario as the MuJoCo / PyBullet demos: a rigid cube dropped from ~1.5 m
+Same scenario as the MuJoCo demo: a rigid cube dropped from ~1.5 m
 with a small tilt, settling on the floor over 5 s. Genesis is GPU-accelerated;
 we render off-screen with a headless camera and write an MP4. Falls back to the
 CPU backend if the GPU can't be initialised.

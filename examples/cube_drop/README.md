@@ -11,7 +11,6 @@ confirm each engine simulates + renders on this machine.
 | Backend | Script | Hardware | Video |
 |---------|--------|----------|-------|
 | MuJoCo | [`mujoco_cube.py`](mujoco_cube.py) | CPU + EGL render | [mp4](https://files.catbox.moe/yct6vx.mp4) |
-| PyBullet | [`pybullet_cube.py`](pybullet_cube.py) | CPU + TinyRenderer | [mp4](https://files.catbox.moe/eyh0g5.mp4) |
 | Genesis | [`genesis_cube.py`](genesis_cube.py) | NVIDIA GPU (CUDA) | [mp4](https://files.catbox.moe/0k4r8o.mp4) |
 | mjlab (MuJoCo-Warp) | [`mjlab_cube.py`](mjlab_cube.py) | NVIDIA GPU (CUDA) | [mp4](https://files.catbox.moe/2t1e04.mp4) |
 | Nexus (Rapier-on-GPU) | [`nexus_cube.py`](nexus_cube.py) | GPU (WebGPU) | [mp4](https://files.catbox.moe/m3ywsx.mp4) |
@@ -41,9 +40,8 @@ setup (model load / GPU pipeline compile).
 | MuJoCo | **1684** | 150 / 0.09 s | 640×480 | CPU physics + EGL render |
 | mjlab | **565** | 150 / 0.27 s | 640×480 | GPU (MuJoCo-Warp) + host EGL render |
 | Genesis | **332** | 150 / 0.45 s | 640×480 | GPU physics + render |
-| PyBullet | **29** | 150 / 5.14 s | 640×480 | CPU + TinyRenderer (software raster) |
-| Nexus | **33.1** | 180 / 5.4 s | 640×480 | GPU (WebGPU) + `render()` readback (patched kiss3d, 2 steps/frame for real-time playback) |
-| Nexus (Rapier CPU) | **26.5** | 180 / 6.8 s | 640×480 | Rapier CPU physics + `render()` readback (patched kiss3d, 2 steps/frame) |
+| Nexus | **92.1** | 180 / 2.0 s | 640×480 | GPU (WebGPU), headless + pipelined `snap_rgb_async()` readback (patched kiss3d, 2 steps/frame for real-time playback) |
+| Nexus (Rapier CPU) | **37.5** | 180 / 4.8 s | 640×480 | Rapier CPU physics, headless + pipelined `snap_rgb_async()` readback (patched kiss3d, 2 steps/frame) |
 
 **Read these numbers with the caveats:**
 
@@ -57,6 +55,15 @@ setup (model load / GPU pipeline compile).
   stalls. Copying each row into cached memory first (+ reusing the staging
   buffer, + waiting on the copy's submission index instead of the whole device)
   cut the readback to 5.4 ms — kiss3d PR #397.
+- **And 33 fps was vsync, not compute.** The windowed viewer presents through a
+  swapchain created with kiss3d's default `vsync: true` (Fifo), and the
+  blocking per-frame readback prevented frame pipelining, so each loop
+  iteration ate ~2 vblanks (~30 ms) regardless of GPU load. Fixed three ways in
+  the local kiss3d/nexus3d builds: `NexusViewer(w, h, headless=True)` (no
+  window, no swapchain — also works without a display server), `set_vsync()`
+  for windowed capture, and `snap_rgb_async()`/`snap_rgb_flush()` (double-buffered
+  readback that collects frame N after frame N+1 renders). Result: 33.1 → 92.1
+  gen-fps (GPU physics), 26.5 → 37.5 (Rapier CPU, physics-bound).
 - **Time scale calibrated with `NexusViewer.body_pose()`**: each nexus solver
   step advances 1/60 s, so 30 fps videos need `set_rbd_steps_per_frame(2)` or
   they play at 0.5× (the cube now lands at frame 23, matching analytic free
@@ -67,7 +74,6 @@ setup (model load / GPU pipeline compile).
   until first contact — found with `body_pose()` (frozen quaternion during free
   fall) and fixed in the `fix/initial-velocities-from-rapier` branch; rotation
   now integrates at exactly |ω|·dt.
-- PyBullet's 29 fps is bounded by its CPU software rasterizer, not physics.
 
 ## Ray tracing
 
@@ -80,9 +86,8 @@ installed; Genesis's RT backend isn't built).
 | Backend | Native renderer | Native ray tracing | RT backend | Status on this machine |
 |---------|-----------------|--------------------|------------|------------------------|
 | MuJoCo | OpenGL rasterizer (`mujoco.Renderer`) | ❌ none | — | rasterizer only |
-| PyBullet | TinyRenderer / OpenGL | ❌ none | — | rasterizer only |
 | mjlab (MuJoCo-Warp) | host `mujoco.Renderer` (raster) | ❌ none | — | rasterizer only |
-| Nexus (Rapier-on-GPU) | kiss3d (WebGPU) | ✅ kiss3d 0.45 GPU path tracer | kiss3d / khal | ✅ **exposed** via `raytrace_frame()`/`render()` (local `feat/python-rt-render` build; PR pending) |
+| Nexus (Rapier-on-GPU) | kiss3d (WebGPU) | ✅ kiss3d 0.45 GPU path tracer | kiss3d / khal | ✅ **exposed** via `raytrace_frame()`/`snap_rgb()` (local `feat/python-rt-render` build; PR pending) |
 | Genesis | rasterizer **+ `RayTracer`** | ✅ optional | LuisaRender (LuisaCompute) | ✅ **built** from source (`~/rt_build/Genesis`, low-mem ninja build) |
 | **Isaac Sim / Isaac Lab** | **Omniverse RTX renderer** | ✅ **native, default** — `RayTracedLighting` (real-time RTX) + `PathTracing` (reference) | Omniverse RTX (Kit) | ✅ **installed** (pip `isaacsim`, separate venv at `~/rt_build/isaac-venv`) |
 
@@ -123,7 +128,6 @@ Benchmark on the **RTX 5080** (150 frames, 480×360 @ 96 spp, Mitsuba/OptiX):
 | Backend | Physics (steps/s) | Ray-trace render (shared) | ms/frame |
 |---------|------------------:|--------------------------:|---------:|
 | MuJoCo | 408,000 | 35.0 fps | 29 |
-| PyBullet | 317,000 | 37.7 fps | 27 |
 | mjlab (GPU) | 7,000 | 38.5 fps | 26 |
 | Genesis (GPU) | 3,300 | 37.7 fps | 27 |
 | Isaac Sim (PhysX, GPU) | 5,400 | 37.2 fps | 27 |
@@ -197,8 +201,10 @@ genesis/isaac native demos, via `NexusViewer(width, height)`):
 | path trace, 64 spp/call | 119 | 8.4 |
 | `snap_rgb()` readback | 57.5 | 17.4 |
 
-- End-to-end video generation at 64 spp: **4.2 fps (~236 ms/frame)** — same
-  ballpark as Isaac (12 fps) and Genesis (14.3 fps) at the same resolution/spp.
+- End-to-end video generation at 64 spp: **3.8 fps (~265 ms/frame)**, now
+  measured over the whole loop (physics + trace + pipelined readback, headless)
+  — same ballpark as Isaac (12 fps) and Genesis (14.3 fps) at the same
+  resolution/spp; the tracer itself is the bound.
 - The former bottleneck — frame readback — is fixed: kiss3d's `read_pixels`
   converted BGRA→RGB by indexing the *mapped* staging buffer per byte, and
   mapped readback memory is uncached (~10 MB/s). Copying each row to cached
@@ -218,8 +224,7 @@ Genesis/mjlab, WebGPU for Nexus). Each script prints a `[fps]` line.
 
 ```bash
 MUJOCO_GL=egl python examples/cube_drop/mujoco_cube.py
-python examples/cube_drop/pybullet_cube.py
 python examples/cube_drop/genesis_cube.py            # GPU
 MUJOCO_GL=egl python examples/cube_drop/mjlab_cube.py  # GPU
-python examples/cube_drop/nexus_cube.py              # GPU; needs nexus3d with render()
+python examples/cube_drop/nexus_cube.py              # GPU; needs nexus3d with snap_rgb()
 ```
