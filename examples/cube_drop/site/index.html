@@ -63,7 +63,7 @@ with its built-in PD servos. This measures per-frame render/readback overhead �
 massively-parallel multi-env workloads the GPU engines (Genesis, mjlab, Isaac, Nexus) are designed
 for. Isaac's LeRobot row runs with a pinned base (no open-loop static pose balances under PhysX's
 contact model; see <code>examples/lerobot_legs/isaac_render.py</code>). Generated
-2026-07-09T15:00:43 by <code>examples/cube_drop/benchmark.py</code>.</p>
+2026-07-09T15:15:09 by <code>examples/cube_drop/benchmark.py</code>.</p>
 
 <div class="tiles"><div class='tile'><span class='tile-label'>GPU</span><span class='tile-val'>NVIDIA GeForce RTX 5080 Laptop GPU</span></div><div class='tile'><span class='tile-label'>Driver</span><span class='tile-val'>580.159.03</span></div><div class='tile'><span class='tile-label'>VRAM</span><span class='tile-val'>16303 MiB</span></div><div class='tile'><span class='tile-label'>CPU</span><span class='tile-val'>Intel(R) Core(TM) Ultra 9 275HX</span></div><div class='tile'><span class='tile-label'>RAM</span><span class='tile-val'>31 GB</span></div><div class='tile'><span class='tile-label'>OS</span><span class='tile-val'>Linux 6.17.0-35-generic</span></div></div>
 
@@ -148,6 +148,11 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
   <span class="bar-track"><span class="bar" style="width:9.7%"></span></span>
   <span class="bar-val">51.9 fps</span>
 </div>
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 28.3 fps (640x480)">
+  <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480</span></span>
+  <span class="bar-track"><span class="bar" style="width:5.3%"></span></span>
+  <span class="bar-val">28.3 fps</span>
+</div>
 <div class="bar-row" tabindex="0" title="Nexus (Rapier-on-GPU): 6.7 fps (640x480)">
   <span class="bar-label">Nexus (Rapier-on-GPU)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar" style="width:1.2%"></span></span>
@@ -160,6 +165,11 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
   <span class="bar-label">Isaac Sim<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar" style="width:100.0%"></span></span>
   <span class="bar-val">70.1 fps</span>
+</div>
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 4.7 fps (640x480 @ 32 spp)">
+  <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480 @ 32 spp</span></span>
+  <span class="bar-track"><span class="bar" style="width:6.7%"></span></span>
+  <span class="bar-val">4.7 fps</span>
 </div>
 <div class="bar-row" tabindex="0" title="Nexus (Rapier-on-GPU): 3.1 fps (640x480 @ 32 spp)">
   <span class="bar-label">Nexus (Rapier-on-GPU)<span class="sub"> 640x480 @ 32 spp</span></span>
@@ -192,8 +202,10 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
 <tr><td>Nexus (Rapier-on-GPU)</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>3.6</td><td>277</td><td>—</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 <tr><td>MuJoCo</td><td>LeRobot legs — Rasterized (native renderer)</td><td>536</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-08</td></tr>
 <tr><td>Genesis</td><td>LeRobot legs — Rasterized (native renderer)</td><td>51.9</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-08</td></tr>
+<tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Rasterized (native renderer)</td><td>28.3</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 <tr><td>Nexus (Rapier-on-GPU)</td><td>LeRobot legs — Rasterized (native renderer)</td><td>6.7</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-08</td></tr>
 <tr><td>Isaac Sim</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>70.1</td><td>14</td><td>3,351</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
+<tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>4.7</td><td>—</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 <tr><td>Nexus (Rapier-on-GPU)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>3.1</td><td>—</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 <tr><td>Genesis</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>2.7</td><td>365</td><td>758</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 </tbody>
@@ -270,6 +282,11 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
   <span class="sub">640x480</span></figcaption>
 </figure>
 <figure>
+  <video src="https://files.catbox.moe/8o4zn0.mp4" controls loop muted playsinline></video>
+  <figcaption><strong>Nexus (cuda-oxide + CUDA graph)</strong> <span class='badge'>28.3 fps</span>
+  <span class="sub">640x480</span></figcaption>
+</figure>
+<figure>
   <video src="https://files.catbox.moe/j8bzx1.mp4" controls loop muted playsinline></video>
   <figcaption><strong>Nexus (Rapier-on-GPU)</strong> <span class='badge'>6.7 fps</span>
   <span class="sub">640x480</span></figcaption>
@@ -279,6 +296,11 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
 <figure>
   <video src="https://files.catbox.moe/rvxlc4.mp4" controls loop muted playsinline></video>
   <figcaption><strong>Isaac Sim</strong> <span class='badge'>70.1 fps</span>
+  <span class="sub">640x480 @ 32 spp</span></figcaption>
+</figure>
+<figure>
+  <video src="https://files.catbox.moe/fv1o9a.mp4" controls loop muted playsinline></video>
+  <figcaption><strong>Nexus (cuda-oxide + CUDA graph)</strong> <span class='badge'>4.7 fps</span>
   <span class="sub">640x480 @ 32 spp</span></figcaption>
 </figure>
 <figure>

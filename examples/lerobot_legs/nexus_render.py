@@ -43,11 +43,17 @@ XML = REAL_XML if REAL_XML.exists() else REPO / "src/sim2sim/assets/lerobot_legs
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rt", action="store_true", help="path trace instead of rasterizing")
+    ap.add_argument("--cuda", action="store_true",
+                    help="step physics with the native CUDA (cuda-oxide) backend")
+    ap.add_argument("--cuda-graph", action="store_true",
+                    help="like --cuda, but capture the per-frame solver steps into a CUDA graph and replay it")
     args = ap.parse_args()
 
     # Headless: no window/swapchain, so capture is not vsync-throttled.
     viewer = nx.NexusViewer(W, H, headless=True)
     viewer.set_draw_ui(False)
+    if args.cuda or args.cuda_graph:
+        viewer.with_cuda()
     viewer.init_backend()
     pipeline = nx.NexusPipeline()
     pipeline.preload_pipelines(viewer)
@@ -72,11 +78,25 @@ def main() -> None:
         viewer.set_raytracer_interactive_scale(1.0)
 
     ts = nx.GpuTimestamps(viewer, 2048)
+
+    # CUDA-graph mode: warm up, then capture the per-frame solver steps once
+    # and replay them with a single cuGraphLaunch per frame.
+    graphed = False
+    if args.cuda_graph:
+        for _ in range(5):
+            pipeline.simulate(viewer, state, None)
+            viewer.sync(state, None)
+        graphed = pipeline.capture_cuda_graph(viewer, state)
+        assert graphed, "CUDA graph capture failed (not on the CUDA backend?)"
+
     n_frames = int(DURATION_S * FPS)
     frames = []
     t0 = time.perf_counter()
     while len(frames) < n_frames:
-        pipeline.simulate(viewer, state, ts)
+        if graphed:
+            pipeline.replay_cuda_graph()
+        else:
+            pipeline.simulate(viewer, state, ts)
         viewer.sync(state, ts)
         if args.rt:
             if not all(viewer.raytrace_frame() for _ in range(RT_ACCUM)):
@@ -93,7 +113,8 @@ def main() -> None:
         frames.append(frame)
     gen_s = time.perf_counter() - t0
 
-    tag = "nexus_rt" if args.rt else "nexus"
+    backend_tag = "_cuda_graph" if args.cuda_graph else ("_cuda" if args.cuda else "")
+    tag = ("nexus_rt" if args.rt else "nexus") + backend_tag
     out = Path(__file__).parent / f"lerobot_{tag}.mp4"
     imageio.mimsave(out, frames, fps=FPS)
     mode = f"path traced @ {RT_ACCUM * RT_SPP} spp" if args.rt else "rasterized"
