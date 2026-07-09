@@ -68,20 +68,47 @@ def main() -> None:
 
     ts = nx.GpuTimestamps(viewer, 2048)
 
+    # Warmup outside the timers (like the Genesis demos): the first frame pays
+    # one-off allocation/BVH/staging-buffer setup.
+    for _ in range(3):
+        pipeline.simulate(viewer, state, ts)
+        viewer.sync(state, ts)
+        viewer.raytrace_frame()
+        viewer.snap_rgb_async()
+    viewer.snap_rgb_flush()
+
     frames = []
     # Headless + pipelined readback means raytrace_frame() only *submits* GPU
     # work — timing it alone would measure the submit rate, not the tracing.
     # Time the whole loop instead (physics + trace + readback, like the other
     # backends' gen-fps).
+    t_phys = t_sync = t_render = t_read = 0.0
+    n_loops = 0
     t_loop = time.perf_counter()
     while len(frames) < N_FRAMES:
+        t = time.perf_counter()
         pipeline.simulate(viewer, state, ts)
+        # State read blocks until the async GPU solver finishes — bills physics
+        # to this segment instead of whichever later call drains the queue.
+        viewer.body_pose(state, cube_h)
+        t_phys += time.perf_counter() - t
+        t = time.perf_counter()
         viewer.sync(state, ts)
-        if not all(viewer.raytrace_frame() for _ in range(ACCUM_FRAMES)):
+        t_sync += time.perf_counter() - t
+        t = time.perf_counter()
+        ok = all(viewer.raytrace_frame() for _ in range(ACCUM_FRAMES))
+        # Same trick for the trace: drain the shared WebGPU queue so tracing is
+        # billed to render, not readback.
+        viewer.body_pose(state, cube_h)
+        t_render += time.perf_counter() - t
+        if not ok:
             break
         # Pipelined readback: previous frame (None first call) while this
         # frame's GPU->CPU copy runs in the background.
+        t = time.perf_counter()
         frame = viewer.snap_rgb_async()
+        t_read += time.perf_counter() - t
+        n_loops += 1
         if frame is not None:
             frames.append(frame)
     frame = viewer.snap_rgb_flush()
@@ -96,6 +123,9 @@ def main() -> None:
         f"wrote {out} ({len(frames)} frames @ {FPS}fps) | "
         f"path trace {len(frames) / rend_s:.1f} fps ({1000 * rend_s / max(len(frames), 1):.0f} ms/frame @ {spp} spp)"
     )
+    n = max(n_loops, 1)
+    print(f"[segments] nexus-rt-native: physics={1e3 * t_phys / n:.2f}ms sync={1e3 * t_sync / n:.2f}ms "
+          f"render={1e3 * t_render / n:.2f}ms readback={1e3 * t_read / n:.2f}ms")
 
 
 if __name__ == "__main__":

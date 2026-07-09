@@ -34,6 +34,8 @@ def main() -> None:
                     help="step physics with the native CUDA (cuda-oxide) backend (needs a wheel built with --features cuda)")
     ap.add_argument("--cuda-graph", action="store_true",
                     help="like --cuda, but capture the per-frame solver steps into a CUDA graph after warmup and replay it (one cuGraphLaunch per frame)")
+    ap.add_argument("--no-capture", action="store_true",
+                    help="skip the frame readback (and the MP4): benchmark the sim+render loop with frames staying on the GPU")
     args = ap.parse_args()
 
     # Headless: no window, no swapchain — capture is not throttled by the
@@ -101,31 +103,69 @@ def main() -> None:
         graphed = pipeline.capture_cuda_graph(viewer, state)
         assert graphed, "CUDA graph capture failed (not on the CUDA backend?)"
 
+    # Warmup outside the timers (like the Genesis demos): the first frame pays
+    # one-off allocation/BVH/staging-buffer setup (~160 ms vs ~18 ms steady).
+    for _ in range(5):
+        viewer.render_frame()
+        if graphed:
+            pipeline.replay_cuda_graph()
+        else:
+            pipeline.simulate(viewer, state, ts)
+        viewer.sync(state, ts)
+        if not args.no_capture:
+            viewer.snap_rgb_async()
+    if not args.no_capture:
+        viewer.snap_rgb_flush()
+
     frames = []
+    t_phys = t_sync = t_render = t_read = 0.0
+    n_loops = 0
     t0 = time.perf_counter()
-    while len(frames) < N_FRAMES:
-        if not viewer.render_frame():  # draw one frame + pump events
+    while (n_loops if args.no_capture else len(frames)) < N_FRAMES:
+        t = time.perf_counter()
+        ok = viewer.render_frame()  # draw one frame + pump events
+        t_render += time.perf_counter() - t
+        if not ok:
             break
+        t = time.perf_counter()
         if graphed:
             pipeline.replay_cuda_graph()  # whole solver-step sequence, one launch
         else:
             pipeline.simulate(viewer, state, ts)  # advance the physics
+        # Physics is submitted asynchronously; a state read blocks until the
+        # solver finishes, so its GPU time is billed to this segment instead of
+        # whichever later call happens to drain the queue.
+        viewer.body_pose(state, cube_h)
+        t_phys += time.perf_counter() - t
+        t = time.perf_counter()
         viewer.sync(state, ts)  # GPU -> renderer
+        t_sync += time.perf_counter() - t
         # Pipelined readback: returns the previous frame (None on the first
         # call) while this frame's GPU->CPU copy runs in the background.
-        frame = viewer.snap_rgb_async()
-        if frame is not None:
+        if not args.no_capture:
+            t = time.perf_counter()
+            frame = viewer.snap_rgb_async()
+            t_read += time.perf_counter() - t
+            if frame is not None:
+                frames.append(frame)
+        n_loops += 1
+    if not args.no_capture:
+        frame = viewer.snap_rgb_flush()  # collect the last in-flight frame
+        if frame is not None and len(frames) < N_FRAMES:
             frames.append(frame)
-    frame = viewer.snap_rgb_flush()  # collect the last in-flight frame
-    if frame is not None and len(frames) < N_FRAMES:
-        frames.append(frame)
     gen_s = time.perf_counter() - t0
 
     tag = ("nexus-cpu" if args.cpu else "nexus-cuda-graph" if args.cuda_graph else "nexus-cuda" if args.cuda else "nexus")
-    out = Path(__file__).parent / f"cube_{tag.replace('-', '_')}.mp4"
-    imageio.mimsave(out, frames, fps=FPS)
-    print(f"wrote {out}  ({len(frames)} frames @ {FPS}fps)")
-    print(f"[fps] {tag}: {len(frames)} frames in {gen_s:.2f}s = {len(frames) / gen_s:.1f} gen-fps")
+    if args.no_capture:
+        print(f"[fps-nocapture] {tag}: {n_loops} frames in {gen_s:.2f}s = {n_loops / gen_s:.1f} gen-fps")
+    else:
+        out = Path(__file__).parent / f"cube_{tag.replace('-', '_')}.mp4"
+        imageio.mimsave(out, frames, fps=FPS)
+        print(f"wrote {out}  ({len(frames)} frames @ {FPS}fps)")
+        print(f"[fps] {tag}: {len(frames)} frames in {gen_s:.2f}s = {len(frames) / gen_s:.1f} gen-fps")
+    n = max(n_loops, 1)
+    print(f"[segments] {tag}: physics={1e3 * t_phys / n:.2f}ms sync={1e3 * t_sync / n:.2f}ms "
+          f"render={1e3 * t_render / n:.2f}ms readback={1e3 * t_read / n:.2f}ms")
 
 
 if __name__ == "__main__":

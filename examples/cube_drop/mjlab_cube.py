@@ -71,21 +71,31 @@ def main() -> None:
     steps_per_frame = max(1, round((1.0 / FPS) / DT))
 
     frames = []
+    t_phys = t_sync = t_render = 0.0
     with mujoco.Renderer(model, height=H, width=W) as renderer:
         t0 = time.perf_counter()
         for _ in range(n_frames):
+            t = time.perf_counter()
             for _ in range(steps_per_frame):
                 sim.step()
+            t_phys += time.perf_counter() - t
+            t = time.perf_counter()
             host_data.qpos[:] = _row0_np(sim.data.qpos)
             mujoco.mj_forward(model, host_data)
+            t_sync += time.perf_counter() - t
+            t = time.perf_counter()
             renderer.update_scene(host_data, camera=cam)
             frames.append(renderer.render())
+            t_render += time.perf_counter() - t
         gen = time.perf_counter() - t0
 
     out = Path(__file__).parent / "cube_mjlab.mp4"
     imageio.mimsave(out, frames, fps=FPS)
     print(f"wrote {out}  ({len(frames)} frames, {DURATION_S:.0f}s @ {FPS}fps)")
     print(f"[fps] mjlab: {len(frames)} frames in {gen:.2f}s = {len(frames) / gen:.1f} gen-fps")
+    n = len(frames)
+    print(f"[segments] mjlab: physics={1e3 * t_phys / n:.2f}ms sync={1e3 * t_sync / n:.2f}ms "
+          f"render={1e3 * t_render / n:.2f}ms")
 
 
 if __name__ == "__main__":

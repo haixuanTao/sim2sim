@@ -11,11 +11,16 @@ Run:  python examples/lerobot_legs/genesis_render.py
 
 from __future__ import annotations
 
+import argparse
+import sys
 import time
 from pathlib import Path
 
 import imageio.v2 as imageio
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "cube_drop"))
+from genesis_cube import patch_out_readback  # noqa: E402
 
 DURATION_S = 5.0
 FPS = 30
@@ -39,7 +44,15 @@ GAINS = {
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-capture", action="store_true",
+                    help="skip the frame readback (and the MP4): benchmark the sim+render loop with frames staying on the GPU")
+    args = ap.parse_args()
+
     import genesis as gs
+
+    if args.no_capture:
+        patch_out_readback()
 
     try:
         gs.init(backend=gs.gpu)
@@ -75,22 +88,41 @@ def main() -> None:
 
     n_frames = int(DURATION_S * FPS)
     spf = max(1, round((1.0 / FPS) / DT))
+
+    # Warmup outside the timers: the first step/render JIT-compile taichi and
+    # render kernels (~2 s), which otherwise lands in the measured segments.
+    # PD targets are held during warmup so the stance doesn't drift.
+    for _ in range(5):
+        robot.control_dofs_position(target, dofs)
+        scene.step()
+        cam.render()
+
     frames = []
+    t_phys = t_render = 0.0
     t0 = time.perf_counter()
     for _ in range(n_frames):
+        t = time.perf_counter()
         for _ in range(spf):
             robot.control_dofs_position(target, dofs)
             scene.step()
+        t_phys += time.perf_counter() - t
+        t = time.perf_counter()
         out = cam.render()
         rgb = out[0] if isinstance(out, tuple) else out
         frames.append(rgb[:, :, :3])
+        t_render += time.perf_counter() - t
     gen_s = time.perf_counter() - t0
 
+    n = len(frames)
+    if args.no_capture:
+        print(f"[fps-nocapture] lerobot/genesis: {n} frames in {gen_s:.2f}s = {n / gen_s:.1f} gen-fps")
+        return
     out_path = Path(__file__).parent / "lerobot_genesis.mp4"
     imageio.mimsave(out_path, frames, fps=FPS)
     z = float(robot.get_pos()[2])
     print(f"wrote {out_path}  ({len(frames)} frames @ {FPS}fps)")
     print(f"[fps] lerobot/genesis: {len(frames)} frames in {gen_s:.2f}s = {len(frames) / gen_s:.1f} gen-fps")
+    print(f"[segments] lerobot/genesis: physics={1e3 * t_phys / n:.2f}ms render={1e3 * t_render / n:.2f}ms")
     print(f"final base height: {z:.3f} m")
 
 

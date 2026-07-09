@@ -42,6 +42,14 @@ BACKEND_LABEL = {
 }
 
 
+# Per-frame time segments (fixed order + fixed colors; see site CSS vars).
+SEGMENTS = ["physics", "sync", "render", "readback"]
+SEG_LABEL = {
+    "physics": "Physics", "sync": "Sync (GPU→host)",
+    "render": "Render", "readback": "Readback",
+}
+
+
 def fmt(v, suffix="") -> str:
     if v is None:
         return "—"
@@ -58,17 +66,23 @@ def table_rows() -> str:
     gpu = DATA["machine"].get("gpu", "none")
     out = []
     for r in rows:
+        segd = dict(_seg_breakdown(r))
+        raw_total = sum(segd.values())
+        scale = _row_ms(r) / raw_total if segd and r.get("fps") else 1.0
+        breakdown = (" / ".join(fmt_ms(segd[k] * scale) if k in segd else "—"
+                                for k in SEGMENTS) if segd else "—")
         if "error" in r:
             cells = [BACKEND_LABEL.get(r["backend"], r["backend"]),
                      f"{MODE_SCENE[r['mode']]} — {MODE_LABEL[r['mode']]}",
                      f"<span class='err'>failed: {html.escape(r['error'][:80])}</span>",
-                     "", "", "", "", gpu, r.get("source", "")]
+                     "", "", "", "", "", gpu, r.get("source", "")]
         else:
             cells = [
                 BACKEND_LABEL.get(r["backend"], r["backend"]),
                 f"{MODE_SCENE[r['mode']]} — {MODE_LABEL[r['mode']]}",
                 fmt(r.get("fps")),
                 fmt(r.get("ms_per_frame")),
+                breakdown,
                 fmt(r.get("physics_steps_s")),
                 r.get("resolution", "—"),
                 fmt(r.get("spp")),
@@ -118,26 +132,97 @@ def fps_charts() -> str:
     return "\n".join(sections)
 
 
+def _seg_breakdown(r: dict) -> list[tuple[str, float]]:
+    segs = r.get("segments") or {}
+    return [(k, segs[k]) for k in SEGMENTS if segs.get(k)]
+
+
+def fmt_ms(ms: float) -> str:
+    return f"{ms:.2f}" if ms < 10 else f"{ms:,.0f}"
+
+
+def _bar_fill(r: dict, width_pct: float, total_ms: float,
+              drop_readback: bool = False) -> tuple[str, str]:
+    """(inner bar HTML, tooltip suffix). Stacked by segment share when known.
+
+    Segment ms are rescaled onto the row's headline frame time (shares were
+    measured in a separate sweep), so the stack always sums to total_ms. With
+    drop_readback the readback segment is excluded (GPU-only loops don't run
+    it) and the rest is rescaled onto total_ms.
+    """
+    segs = _seg_breakdown(r)
+    if drop_readback:
+        segs = [(k, ms) for k, ms in segs if k != "readback"]
+    if not segs:
+        return (f'<span class="bar bar-flat" style="width:{width_pct:.1f}%"></span>',
+                " — no per-segment breakdown")
+    raw_total = sum(ms for _, ms in segs)
+    spans = "".join(
+        f'<span class="bar seg-{k}" style="width:{width_pct * ms / raw_total:.2f}%"></span>'
+        for k, ms in segs
+    )
+    tip = " — " + ", ".join(
+        f"{SEG_LABEL[k].lower()} {fmt_ms(total_ms * ms / raw_total)} ms"
+        f" ({100 * ms / raw_total:.0f}%)"
+        for k, ms in segs
+    )
+    return spans, tip
+
+
+def _row_ms(r: dict) -> float:
+    return r.get("ms_per_frame") or 1000.0 / r["fps"]
+
+
+def _chart_ms(r: dict) -> float:
+    """Frame time charted: the GPU-only (no frame readback) loop when measured,
+    the full capture loop otherwise."""
+    if r.get("fps_nocapture"):
+        return 1000.0 / r["fps_nocapture"]
+    return _row_ms(r)
+
+
 def _fps_chart_for(mode: str, label: str) -> str:
     rows = sorted(
         (r for r in DATA["rows"] if r["mode"] == mode and r.get("fps")),
-        key=lambda r: -r["fps"],
+        key=_chart_ms,
     )
     if not rows:
         return ""
-    vmax = max(r["fps"] for r in rows)
-    bars = "\n".join(
-        f"""<div class="bar-row" tabindex="0" title="{BACKEND_LABEL.get(r['backend'], r['backend'])}: {fmt(r['fps'])} fps ({r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''})">
-  <span class="bar-label">{BACKEND_LABEL.get(r['backend'], r['backend'])}<span class="sub"> {r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''}</span></span>
-  <span class="bar-track"><span class="bar" style="width:{max(100 * r['fps'] / vmax, 0.4):.1f}%"></span></span>
-  <span class="bar-val">{fmt(r['fps'])} fps</span>
+    vmax = max(_chart_ms(r) for r in rows)
+    bars = []
+    for r in rows:
+        nocap = r.get("fps_nocapture")
+        ms = _chart_ms(r)
+        fps = nocap or r["fps"]
+        width = max(100 * ms / vmax, 0.4)
+        fill, tip = _bar_fill(r, width, ms, drop_readback=bool(nocap))
+        sub = f"{r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''}"
+        if nocap:
+            tip += f"; with frame readback to CPU: {fmt(r['fps'])} fps"
+            extra = f'<br><span class="sub">{fmt(r["fps"])} fps w/ readback</span>'
+        else:
+            extra = '<br><span class="sub">incl. readback</span>'
+        bars.append(
+            f"""<div class="bar-row" tabindex="0" title="{BACKEND_LABEL.get(r['backend'], r['backend'])}: {fmt_ms(ms)} ms/frame = {fmt(fps)} fps ({sub}){tip}">
+  <span class="bar-label">{BACKEND_LABEL.get(r['backend'], r['backend'])}<span class="sub"> {sub}</span></span>
+  <span class="bar-track">{fill}</span>
+  <span class="bar-val">{fmt_ms(ms)} ms <span class="sub">{fmt(fps)} fps</span>{extra}</span>
 </div>"""
-        for r in rows
-    )
+        )
     return f"""<h3>{label}</h3>
-<div class="chart" role="img" aria-label="Bar chart of render fps per backend, {label}">
-{bars}
+<div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), {label}">
+{chr(10).join(bars)}
 </div>"""
+
+
+def seg_legend() -> str:
+    chips = "".join(
+        f'<span class="chip"><span class="swatch seg-{k}"></span>{SEG_LABEL[k]}</span>'
+        for k in SEGMENTS
+    )
+    return (f'<div class="legend">{chips}'
+            '<span class="chip"><span class="swatch bar-flat"></span>'
+            'no breakdown measured</span></div>')
 
 
 def main() -> None:
@@ -164,10 +249,14 @@ def main() -> None:
 :root {{
   --surface: #fcfcfb; --surface-2: #f1f1ee; --ink: #0b0b0b; --ink-2: #52514e;
   --line: #dddcd6; --accent: #2a78d6; --err: #b3261e;
+  --seg-physics: #2a78d6; --seg-sync: #eda100; --seg-render: #1baf7a;
+  --seg-readback: #4a3aa7; --seg-flat: #a5a49d;
 }}
 @media (prefers-color-scheme: dark) {{
   :root {{ --surface: #1a1a19; --surface-2: #242422; --ink: #ffffff; --ink-2: #c3c2b7;
-           --line: #3a3936; --accent: #3987e5; --err: #e66767; }}
+           --line: #3a3936; --accent: #3987e5; --err: #e66767;
+           --seg-physics: #3987e5; --seg-sync: #c98500; --seg-render: #199e70;
+           --seg-readback: #9085e9; --seg-flat: #6a6963; }}
 }}
 * {{ box-sizing: border-box; }}
 body {{ margin: 0 auto; max-width: 1080px; padding: 2rem 1.25rem 4rem;
@@ -188,7 +277,7 @@ th, td {{ text-align: left; padding: .45rem .7rem; border-top: 1px solid var(--l
 thead th {{ border-top: 0; background: var(--surface-2); font-size: .75rem;
             text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }}
 tbody tr:hover {{ background: var(--surface-2); }}
-td:nth-child(n+3):nth-child(-n+7) {{ font-variant-numeric: tabular-nums; }}
+td:nth-child(n+3):nth-child(-n+8) {{ font-variant-numeric: tabular-nums; }}
 .err {{ color: var(--err); }}
 .gallery {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }}
 figure {{ margin: 0; }}
@@ -198,12 +287,24 @@ figcaption .sub {{ display: block; }}
 .badge {{ background: var(--accent); color: #fff; border-radius: 999px;
          padding: .05rem .55rem; font-size: .72rem; font-weight: 600; vertical-align: middle; }}
 .chart {{ display: flex; flex-direction: column; gap: 6px; max-width: 680px; margin: .75rem 0 1.25rem; }}
-.bar-row {{ display: grid; grid-template-columns: 14.5rem 1fr 6rem; align-items: center; gap: .6rem; }}
+.bar-row {{ display: grid; grid-template-columns: 14.5rem 1fr 9rem; align-items: center; gap: .6rem; }}
 .bar-row:hover .bar, .bar-row:focus .bar {{ filter: brightness(1.15); }}
 .bar-label {{ font-size: .8rem; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-.bar-track {{ background: var(--surface-2); border-radius: 4px; height: 14px; overflow: hidden; }}
-.bar {{ display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }}
+.bar-track {{ background: var(--surface-2); border-radius: 4px; height: 14px; overflow: hidden;
+              display: flex; }}
+.bar {{ display: block; height: 100%; flex: none; }}
+.bar + .bar {{ margin-left: 2px; }}
+.bar:last-child {{ border-radius: 0 4px 4px 0; }}
+.seg-physics {{ background: var(--seg-physics); }}
+.seg-sync {{ background: var(--seg-sync); }}
+.seg-render {{ background: var(--seg-render); }}
+.seg-readback {{ background: var(--seg-readback); }}
+.bar-flat {{ background: var(--seg-flat); }}
 .bar-val {{ font-size: .8rem; font-variant-numeric: tabular-nums; }}
+.legend {{ display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: .75rem 0 .25rem;
+           font-size: .8rem; color: var(--ink-2); }}
+.chip {{ display: inline-flex; align-items: center; gap: .35rem; }}
+.swatch {{ width: 10px; height: 10px; border-radius: 3px; flex: none; }}
 details {{ margin: 1rem 0; }}
 summary {{ cursor: pointer; color: var(--ink-2); font-size: .9rem; }}
 footer {{ margin-top: 3rem; font-size: .8rem; color: var(--ink-2); }}
@@ -234,6 +335,25 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
 <a href="https://github.com/dimforge/kiss3d/pull/397">kiss3d #397 (readback fix)</a>,
 <a href="https://github.com/dimforge/nexus/pull/7">nexus #7 (frame export)</a> and
 <a href="https://github.com/dimforge/nexus/pull/8">nexus #8 (Python ray tracing)</a>.</p>
+<p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
+where that time goes (host wall-clock per segment):
+<strong>physics</strong> (solver steps), <strong>sync</strong> (GPU-sim state back to the host/renderer),
+<strong>render</strong> (draw or path-trace + scene update), <strong>readback</strong> (frame pixels to CPU).
+Nexus submits GPU work asynchronously, so the timed loop drains the queue with a state read after
+the physics step (and after the trace in RT rows) — each segment is billed its own GPU time
+instead of whichever later call happens to block. One exception: on the native-CUDA backend the
+drain only covers the physics stream, so there the WebGPU trace/render completion still lands in
+readback. Nexus and Genesis raster rows chart their <strong>GPU-only</strong> loop: frame
+readback skipped, frames stay in the GPU framebuffer as an on-GPU RL pipeline would consume them
+(Nexus via <code>--no-capture</code>, Genesis by patching out its rasterizer's
+<code>glReadPixels</code>; the with-readback fps is listed beneath). MuJoCo/mjlab/Isaac expose no
+equivalent hook, so their bars still include the readback (marked). Splits were
+measured 2026-07-09 (same scripts, machine under normal load); the headline frame time keeps its
+original idle-GPU measurement and the measured <em>shares</em> are rescaled onto it. Hover a bar
+for per-segment ms. Gray bars have no breakdown yet: Isaac (the RTX renderer exposes no clean segment
+boundary from Python), the Genesis path-traced rows, and mjlab / Nexus (Rapier CPU), which are
+pending re-measurement (not installed / wheel built without the cpu feature).</p>
+{seg_legend()}
 {fps_charts()}
 
 <details>
@@ -241,6 +361,7 @@ calibrated with the new <code>body_pose()</code> getter against analytic free fa
 <div class="tablewrap">
 <table>
 <thead><tr><th>Backend</th><th>Mode</th><th>Render fps</th><th>ms/frame</th>
+<th>Breakdown ms (physics / sync / render / readback)</th>
 <th>Physics steps/s</th><th>Resolution</th><th>spp</th><th>GPU</th><th>Source</th></tr></thead>
 <tbody>
 {table_rows()}

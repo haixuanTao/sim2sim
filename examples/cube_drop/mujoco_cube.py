@@ -57,18 +57,25 @@ def main() -> None:
     steps_per_frame = max(1, round((1.0 / FPS) / model.opt.timestep))
 
     frames = []
+    t_phys = t_render = 0.0
     with mujoco.Renderer(model, height=H, width=W) as renderer:
         t0 = time.perf_counter()
         for _ in range(n_frames):
+            t = time.perf_counter()
             for _ in range(steps_per_frame):
                 mujoco.mj_step(model, data)
+            t_phys += time.perf_counter() - t
+            t = time.perf_counter()
             renderer.update_scene(data, camera=cam)
             frames.append(renderer.render())
+            t_render += time.perf_counter() - t
         gen = time.perf_counter() - t0
 
     imageio.mimsave(out, frames, fps=FPS)
     print(f"wrote {out}  ({len(frames)} frames, {DURATION_S:.0f}s @ {FPS}fps)")
     print(f"[fps] mujoco: {len(frames)} frames in {gen:.2f}s = {len(frames) / gen:.1f} gen-fps")
+    n = len(frames)
+    print(f"[segments] mujoco: physics={1e3 * t_phys / n:.2f}ms render={1e3 * t_render / n:.2f}ms")
 
 
 if __name__ == "__main__":

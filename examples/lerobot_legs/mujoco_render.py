@@ -55,18 +55,25 @@ def main() -> None:
     n_frames = int(DURATION_S * FPS)
     spf = max(1, round(1.0 / (FPS * model.opt.timestep)))
     frames = []
+    t_phys = t_render = 0.0
     t0 = time.perf_counter()
     for _ in range(n_frames):
+        t = time.perf_counter()
         for _ in range(spf):
             mujoco.mj_step(model, data)
+        t_phys += time.perf_counter() - t
+        t = time.perf_counter()
         renderer.update_scene(data, cam)
         frames.append(renderer.render())
+        t_render += time.perf_counter() - t
     gen_s = time.perf_counter() - t0
 
     out = Path(__file__).parent / "lerobot_mujoco_real.mp4"
     imageio.mimsave(out, frames, fps=FPS)
     print(f"wrote {out}  ({len(frames)} frames @ {FPS}fps)")
     print(f"[fps] lerobot/mujoco: {len(frames)} frames in {gen_s:.2f}s = {len(frames) / gen_s:.1f} gen-fps")
+    n = len(frames)
+    print(f"[segments] lerobot/mujoco: physics={1e3 * t_phys / n:.2f}ms render={1e3 * t_render / n:.2f}ms")
     print(f"final base height: {data.qpos[2]:.3f} m (started {z0:.3f})")
 
 

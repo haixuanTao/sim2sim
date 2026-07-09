@@ -42,16 +42,16 @@ KNOWN_RESULTS: list[dict] = [
      "pipeline": "CPU physics + EGL render", "video": "cube_mujoco.mp4", "video_url": "https://files.catbox.moe/yct6vx.mp4"},
     {"backend": "mjlab", "mode": "raster", "fps": 565, "resolution": "640x480",
      "pipeline": "GPU (MuJoCo-Warp) + host EGL render", "video": "cube_mjlab.mp4", "video_url": "https://files.catbox.moe/2t1e04.mp4"},
-    {"backend": "genesis", "mode": "raster", "fps": 332, "resolution": "640x480",
-     "pipeline": "GPU physics + render", "video": "cube_genesis.mp4", "video_url": "https://files.catbox.moe/0k4r8o.mp4"},
-    {"backend": "nexus", "mode": "raster", "fps": 92.1, "resolution": "640x480",
+    {"backend": "genesis", "mode": "raster", "fps": 393.9, "fps_nocapture": 486.8, "resolution": "640x480",
+     "pipeline": "GPU physics + render (warmed up: taichi/render JIT excluded)", "source": "measured 2026-07-09", "video": "cube_genesis.mp4", "video_url": "https://files.catbox.moe/0k4r8o.mp4"},
+    {"backend": "nexus", "mode": "raster", "fps": 92.1, "fps_nocapture": 85.2, "resolution": "640x480",
      "pipeline": "GPU (WebGPU) physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 33 fps vsync-locked windowed)",
      "video": "cube_nexus.mp4", "video_url": "https://files.catbox.moe/q8vl72.mp4", "source": "measured 2026-07-08"},
-    {"backend": "nexus_cuda", "mode": "raster", "fps": 16.4, "resolution": "640x480",
+    {"backend": "nexus_cuda", "mode": "raster", "fps": 16.4, "fps_nocapture": 18.2, "resolution": "640x480",
      "pipeline": "native CUDA (cuda-oxide) physics + WebGPU render + pipelined readback (fixed-grid dispatch: no per-dispatch stream drain; was 5.6 fps with indirect dispatch)",
      "video": "cube_nexus_cuda.mp4",
      "video_url": "https://files.catbox.moe/woyrvy.mp4", "source": "measured 2026-07-09 (idle GPU)"},
-    {"backend": "nexus_cuda_graph", "mode": "raster", "fps": 115.0, "resolution": "640x480",
+    {"backend": "nexus_cuda_graph", "mode": "raster", "fps": 115.0, "fps_nocapture": 263.9, "resolution": "640x480",
      "pipeline": "native CUDA (cuda-oxide) physics, whole solver-step sequence captured into a CUDA graph (one cuGraphLaunch/frame) + WebGPU render + pipelined readback",
      "video": "cube_nexus_cuda_graph.mp4",
      "video_url": "https://files.catbox.moe/y0wh6k.mp4", "source": "measured 2026-07-09 (idle GPU)"},
@@ -79,19 +79,19 @@ KNOWN_RESULTS: list[dict] = [
      "pipeline": "CPU physics (PD stance hold) + EGL render",
      "video": "lerobot_mujoco_real.mp4",
      "video_url": "https://files.catbox.moe/ery9of.mp4", "source": "measured 2026-07-08"},
-    {"backend": "nexus", "mode": "lerobot_raster", "fps": 6.7, "resolution": "640x480",
+    {"backend": "nexus", "mode": "lerobot_raster", "fps": 6.7, "fps_nocapture": 6.6, "resolution": "640x480",
      "pipeline": "GPU (WebGPU) multibody, passive (no torque API) + headless pipelined readback (physics-bound)",
      "video": "lerobot_nexus.mp4",
      "video_url": "https://files.catbox.moe/j8bzx1.mp4", "source": "measured 2026-07-08"},
-    {"backend": "genesis", "mode": "lerobot_raster", "fps": 51.9, "resolution": "640x480",
-     "pipeline": "GPU physics (PD stance hold, grid-searched hipy bias) + render",
+    {"backend": "genesis", "mode": "lerobot_raster", "fps": 115.7, "fps_nocapture": 117.9, "resolution": "640x480",
+     "pipeline": "GPU physics (PD stance hold, grid-searched hipy bias) + render (warmed up: taichi/render JIT excluded)",
      "video": "../lerobot_legs/lerobot_genesis.mp4",
-     "video_url": "https://files.catbox.moe/3d5tbq.mp4", "source": "measured 2026-07-08"},
-    {"backend": "nexus_cuda_graph", "mode": "lerobot_raster", "fps": 28.3, "resolution": "640x480",
+     "video_url": "https://files.catbox.moe/3d5tbq.mp4", "source": "measured 2026-07-09"},
+    {"backend": "nexus_cuda_graph", "mode": "lerobot_raster", "fps": 29.6, "fps_nocapture": 35.1, "resolution": "640x480",
      "pipeline": "native CUDA (cuda-oxide) multibody physics, CUDA-graph replay (one cuGraphLaunch/frame) + WebGPU render + pipelined readback; passive collapse (no torque hold in this demo)",
      "video": "../lerobot_legs/lerobot_nexus_cuda_graph.mp4",
      "video_url": "https://files.catbox.moe/8o4zn0.mp4", "source": "measured 2026-07-09 (idle GPU)"},
-    {"backend": "nexus_cuda_graph", "mode": "lerobot_rt", "fps": 4.7, "resolution": "640x480", "spp": 32,
+    {"backend": "nexus_cuda_graph", "mode": "lerobot_rt", "fps": 4.9, "resolution": "640x480", "spp": 32,
      "pipeline": "native CUDA (cuda-oxide) multibody physics via CUDA-graph replay + kiss3d wgpu path tracer (full-res, TLAS-only update)",
      "video": "../lerobot_legs/lerobot_nexus_rt_cuda_graph.mp4",
      "video_url": "https://files.catbox.moe/fv1o9a.mp4", "source": "measured 2026-07-09 (idle GPU)"},
@@ -105,17 +105,42 @@ KNOWN_RESULTS: list[dict] = [
      "pipeline": "PhysX (PD hold, pinned base) + Omniverse RTX PathTracing",
      "video": "../lerobot_legs/lerobot_isaac.mp4",
      "video_url": "https://files.catbox.moe/rvxlc4.mp4", "source": "measured 2026-07-09 (idle GPU)"},
-    {"backend": "nexus", "mode": "lerobot_rt", "fps": 3.1, "resolution": "640x480", "spp": 32,
+    {"backend": "nexus", "mode": "lerobot_rt", "fps": 3.2, "resolution": "640x480", "spp": 32,
      "pipeline": "kiss3d wgpu path tracer (HW ray query), headless, full-res (patched kiss3d: TLAS-only update for rigid motion + single 32-spp call; was 1.0 fps re-baking all meshes, traced at half res)",
      "video": "../lerobot_legs/lerobot_nexus_rt.mp4",
      "video_url": "https://files.catbox.moe/acuuo6.mp4", "source": "measured 2026-07-09 (idle GPU)"},
-    {"backend": "nexus", "mode": "rt_native", "fps": 3.6, "ms_per_frame": 277,
+    {"backend": "nexus", "mode": "rt_native", "fps": 3.9, "ms_per_frame": 257,
      "resolution": "480x368", "spp": 64,
      "pipeline": "kiss3d 0.45 wgpu path tracer, headless + pipelined readback (tracing-bound; whole-loop timing; TLAS-only update patch changes nothing here — 2 meshes)",
      "video": "cube_rt_nexus_native.mp4", "video_url": "https://files.catbox.moe/44cl5o.mp4", "source": "measured 2026-07-09 (idle GPU)"},
 ]
 for _r in KNOWN_RESULTS:
     _r.setdefault("source", "readme 2026-07-08")
+
+# Per-frame wall-clock breakdown (ms) from the [segments] lines. Nexus rows
+# re-swept 2026-07-09 with drain-corrected attribution (a state read after
+# the async physics step / trace bills each segment its own GPU time); their
+# fps matched the idle-GPU headlines. MuJoCo/Genesis swept on battery —
+# shares only; absolute ms throttled vs the headline fps.
+KNOWN_SEGMENTS: dict[tuple[str, str], dict[str, float]] = {
+    ("mujoco", "raster"): {"physics": 0.05, "render": 1.90},
+    ("genesis", "raster"): {"physics": 1.32, "render": 1.22},
+    ("nexus", "raster"): {"physics": 11.70, "sync": 0.16, "render": 0.25, "readback": 5.10},
+    ("nexus_cuda", "raster"): {"physics": 57.42, "sync": 0.02, "render": 0.25, "readback": 5.04},
+    ("nexus_cuda_graph", "raster"): {"physics": 3.53, "sync": 0.01, "render": 0.18, "readback": 5.32},
+    ("nexus", "rt_native"): {"physics": 9.38, "sync": 0.31, "render": 241.68, "readback": 3.53},
+    ("mujoco", "lerobot_raster"): {"physics": 0.22, "render": 6.68},
+    ("genesis", "lerobot_raster"): {"physics": 5.19, "render": 3.46},
+    ("nexus", "lerobot_raster"): {"physics": 136.10, "sync": 3.79, "render": 4.40, "readback": 4.40},
+    ("nexus_cuda_graph", "lerobot_raster"): {"physics": 25.89, "sync": 0.02, "render": 2.68, "readback": 4.78},
+    ("nexus", "lerobot_rt"): {"physics": 99.91, "sync": 0.65, "render": 205.78, "readback": 3.81},
+    ("nexus_cuda_graph", "lerobot_rt"): {"physics": 26.55, "sync": 0.06, "render": 0.84, "readback": 175.66},
+}
+for _r in KNOWN_RESULTS:
+    _seg = KNOWN_SEGMENTS.get((_r["backend"], _r["mode"]))
+    if _seg and "segments" not in _r:
+        _r["segments"] = dict(_seg)
+        _r["segments_source"] = "measured 2026-07-09"
 
 # How to (re)measure each backend x mode: (interpreter, argv-tail, env, parser).
 RE_FPS = re.compile(r"\[fps\] \w+: .* = ([\d.]+) gen-fps")
@@ -124,6 +149,16 @@ RE_RT_NATIVE = re.compile(
     r"\[rt-native\] \w+: physics ([\d,]+) steps/s \| .* ([\d.]+) fps \(([\d.]+) ms/frame"
 )
 RE_NEXUS_RT = re.compile(r"path trace ([\d.]+) fps \(([\d.]+) ms/frame")
+RE_SEGMENTS = re.compile(r"\[segments\] [\w/-]+: (.+)")
+
+
+def parse_segments(out: str, row: dict) -> None:
+    """Optional per-frame timing breakdown: `[segments] tag: physics=1.23ms ...`."""
+    m = RE_SEGMENTS.search(out)
+    if m:
+        row["segments"] = {
+            k: float(v) for k, v in re.findall(r"(\w+)=([\d.]+)ms", m.group(1))
+        }
 
 
 def parse_fps(out: str, row: dict) -> None:
@@ -195,6 +230,7 @@ def measure(backend: str, mode: str, spec: dict) -> dict:
             if proc.returncode != 0:
                 raise RuntimeError(f"exit {proc.returncode}: {out[-400:]}")
             spec["parse"](out, row)
+            parse_segments(out, row)
         except Exception as e:  # keep sweeping; record the failure
             row["error"] = str(e)[:400]
             print(f"[bench] {backend}/{mode} FAILED: {row['error']}", flush=True)

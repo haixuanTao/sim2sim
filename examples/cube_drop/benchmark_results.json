@@ -9,7 +9,7 @@
     "gpu_driver": "580.159.03",
     "gpu_vram": "16303 MiB"
   },
-  "generated": "2026-07-09T15:15:09",
+  "generated": "2026-07-09T19:29:24",
   "rows": [
     {
       "backend": "mujoco",
@@ -19,7 +19,12 @@
       "pipeline": "CPU physics + EGL render",
       "video": "cube_mujoco.mp4",
       "video_url": "https://files.catbox.moe/yct6vx.mp4",
-      "source": "readme 2026-07-08"
+      "source": "readme 2026-07-08",
+      "segments": {
+        "physics": 0.05,
+        "render": 1.9
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "mjlab",
@@ -34,42 +39,72 @@
     {
       "backend": "genesis",
       "mode": "raster",
-      "fps": 332,
+      "fps": 393.9,
+      "fps_nocapture": 486.8,
       "resolution": "640x480",
-      "pipeline": "GPU physics + render",
+      "pipeline": "GPU physics + render (warmed up: taichi/render JIT excluded)",
+      "source": "measured 2026-07-09",
       "video": "cube_genesis.mp4",
       "video_url": "https://files.catbox.moe/0k4r8o.mp4",
-      "source": "readme 2026-07-08"
+      "segments": {
+        "physics": 1.32,
+        "render": 1.22
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus",
       "mode": "raster",
       "fps": 92.1,
+      "fps_nocapture": 85.2,
       "resolution": "640x480",
       "pipeline": "GPU (WebGPU) physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 33 fps vsync-locked windowed)",
       "video": "cube_nexus.mp4",
       "video_url": "https://files.catbox.moe/q8vl72.mp4",
-      "source": "measured 2026-07-08"
+      "source": "measured 2026-07-08",
+      "segments": {
+        "physics": 11.7,
+        "sync": 0.16,
+        "render": 0.25,
+        "readback": 5.1
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus_cuda",
       "mode": "raster",
       "fps": 16.4,
+      "fps_nocapture": 18.2,
       "resolution": "640x480",
       "pipeline": "native CUDA (cuda-oxide) physics + WebGPU render + pipelined readback (fixed-grid dispatch: no per-dispatch stream drain; was 5.6 fps with indirect dispatch)",
       "video": "cube_nexus_cuda.mp4",
       "video_url": "https://files.catbox.moe/woyrvy.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 57.42,
+        "sync": 0.02,
+        "render": 0.25,
+        "readback": 5.04
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus_cuda_graph",
       "mode": "raster",
       "fps": 115.0,
+      "fps_nocapture": 263.9,
       "resolution": "640x480",
       "pipeline": "native CUDA (cuda-oxide) physics, whole solver-step sequence captured into a CUDA graph (one cuGraphLaunch/frame) + WebGPU render + pipelined readback",
       "video": "cube_nexus_cuda_graph.mp4",
       "video_url": "https://files.catbox.moe/y0wh6k.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 3.53,
+        "sync": 0.01,
+        "render": 0.18,
+        "readback": 5.32
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus_cpu",
@@ -160,48 +195,82 @@
       "pipeline": "CPU physics (PD stance hold) + EGL render",
       "video": "lerobot_mujoco_real.mp4",
       "video_url": "https://files.catbox.moe/ery9of.mp4",
-      "source": "measured 2026-07-08"
+      "source": "measured 2026-07-08",
+      "segments": {
+        "physics": 0.22,
+        "render": 6.68
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus",
       "mode": "lerobot_raster",
       "fps": 6.7,
+      "fps_nocapture": 6.6,
       "resolution": "640x480",
       "pipeline": "GPU (WebGPU) multibody, passive (no torque API) + headless pipelined readback (physics-bound)",
       "video": "lerobot_nexus.mp4",
       "video_url": "https://files.catbox.moe/j8bzx1.mp4",
-      "source": "measured 2026-07-08"
+      "source": "measured 2026-07-08",
+      "segments": {
+        "physics": 136.1,
+        "sync": 3.79,
+        "render": 4.4,
+        "readback": 4.4
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "genesis",
       "mode": "lerobot_raster",
-      "fps": 51.9,
+      "fps": 115.7,
+      "fps_nocapture": 117.9,
       "resolution": "640x480",
-      "pipeline": "GPU physics (PD stance hold, grid-searched hipy bias) + render",
+      "pipeline": "GPU physics (PD stance hold, grid-searched hipy bias) + render (warmed up: taichi/render JIT excluded)",
       "video": "../lerobot_legs/lerobot_genesis.mp4",
       "video_url": "https://files.catbox.moe/3d5tbq.mp4",
-      "source": "measured 2026-07-08"
+      "source": "measured 2026-07-09",
+      "segments": {
+        "physics": 5.19,
+        "render": 3.46
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus_cuda_graph",
       "mode": "lerobot_raster",
-      "fps": 28.3,
+      "fps": 29.6,
+      "fps_nocapture": 35.1,
       "resolution": "640x480",
       "pipeline": "native CUDA (cuda-oxide) multibody physics, CUDA-graph replay (one cuGraphLaunch/frame) + WebGPU render + pipelined readback; passive collapse (no torque hold in this demo)",
       "video": "../lerobot_legs/lerobot_nexus_cuda_graph.mp4",
       "video_url": "https://files.catbox.moe/8o4zn0.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 25.89,
+        "sync": 0.02,
+        "render": 2.68,
+        "readback": 4.78
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus_cuda_graph",
       "mode": "lerobot_rt",
-      "fps": 4.7,
+      "fps": 4.9,
       "resolution": "640x480",
       "spp": 32,
       "pipeline": "native CUDA (cuda-oxide) multibody physics via CUDA-graph replay + kiss3d wgpu path tracer (full-res, TLAS-only update)",
       "video": "../lerobot_legs/lerobot_nexus_rt_cuda_graph.mp4",
       "video_url": "https://files.catbox.moe/fv1o9a.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 26.55,
+        "sync": 0.06,
+        "render": 0.84,
+        "readback": 175.66
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "genesis",
@@ -232,25 +301,39 @@
     {
       "backend": "nexus",
       "mode": "lerobot_rt",
-      "fps": 3.1,
+      "fps": 3.2,
       "resolution": "640x480",
       "spp": 32,
       "pipeline": "kiss3d wgpu path tracer (HW ray query), headless, full-res (patched kiss3d: TLAS-only update for rigid motion + single 32-spp call; was 1.0 fps re-baking all meshes, traced at half res)",
       "video": "../lerobot_legs/lerobot_nexus_rt.mp4",
       "video_url": "https://files.catbox.moe/acuuo6.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 99.91,
+        "sync": 0.65,
+        "render": 205.78,
+        "readback": 3.81
+      },
+      "segments_source": "measured 2026-07-09"
     },
     {
       "backend": "nexus",
       "mode": "rt_native",
-      "fps": 3.6,
-      "ms_per_frame": 277,
+      "fps": 3.9,
+      "ms_per_frame": 257,
       "resolution": "480x368",
       "spp": 64,
       "pipeline": "kiss3d 0.45 wgpu path tracer, headless + pipelined readback (tracing-bound; whole-loop timing; TLAS-only update patch changes nothing here \u2014 2 meshes)",
       "video": "cube_rt_nexus_native.mp4",
       "video_url": "https://files.catbox.moe/44cl5o.mp4",
-      "source": "measured 2026-07-09 (idle GPU)"
+      "source": "measured 2026-07-09 (idle GPU)",
+      "segments": {
+        "physics": 9.38,
+        "sync": 0.31,
+        "render": 241.68,
+        "readback": 3.53
+      },
+      "segments_source": "measured 2026-07-09"
     }
   ],
   "nexus_spp_sweep": {
