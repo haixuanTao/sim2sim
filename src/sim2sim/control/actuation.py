@@ -25,7 +25,7 @@ class PDController:
         self.default = robot_cfg.default_joint_pos.astype(np.float32)
         self.kp = robot_cfg.kp.astype(np.float32)
         self.kd = robot_cfg.kd.astype(np.float32)
-        self.action_scale = float(robot_cfg.action_scale)
+        self.action_scale = np.asarray(robot_cfg.action_scale, dtype=np.float32)
         self.torque_limit = (
             robot_cfg.torque_limit.astype(np.float32)
             if robot_cfg.torque_limit is not None

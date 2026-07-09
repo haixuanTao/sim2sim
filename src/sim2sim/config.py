@@ -60,7 +60,7 @@ class RobotCfg:
     default_joint_pos: np.ndarray  # (n_dof,)
     kp: np.ndarray  # (n_dof,) proportional gains
     kd: np.ndarray  # (n_dof,) derivative gains
-    action_scale: float
+    action_scale: float | list[float]
     torque_limit: np.ndarray | None  # (n_dof,) or None
     foot_names: list[str] = field(default_factory=list)
     base_height_init: float = 0.4
@@ -87,7 +87,11 @@ class RobotCfg:
             default_joint_pos=_as_vec(d["default_joint_pos"], n, "default_joint_pos"),
             kp=_as_vec(d["kp"], n, "kp"),
             kd=_as_vec(d["kd"], n, "kd"),
-            action_scale=float(d["action_scale"]),
+            action_scale=(
+                [float(x) for x in d["action_scale"]]
+                if isinstance(d["action_scale"], (list, tuple))
+                else float(d["action_scale"])
+            ),
             torque_limit=(
                 _as_vec(d["torque_limit"], n, "torque_limit")
                 if d.get("torque_limit") is not None
@@ -120,6 +124,11 @@ class PolicyCfg:
     obs_terms: list[ObsTerm]
     command_ranges: dict[str, tuple[float, float]]  # lin_vel_x, lin_vel_y, ang_vel_z
     clip_actions: float | None = None
+    # Gait-clock observation support (policies with a phase term): the phase
+    # advances by ``gait_dt / gait_period`` per control step and resets to 0
+    # with the episode. ``None`` disables the term.
+    gait_period: float | None = None
+    gait_dt: float = 0.02
     config_dir: str = "."
 
     @classmethod
@@ -128,6 +137,8 @@ class PolicyCfg:
         terms = [ObsTerm(name=t["name"], scale=float(t.get("scale", 1.0))) for t in d["obs_terms"]]
         ranges = {k: (float(v[0]), float(v[1])) for k, v in d.get("command_ranges", {}).items()}
         return cls(
+            gait_period=(float(d["gait_period"]) if d.get("gait_period") is not None else None),
+            gait_dt=float(d.get("gait_dt", 0.02)),
             onnx_path=d.get("onnx_path"),
             obs_terms=terms,
             command_ranges=ranges,

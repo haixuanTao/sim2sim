@@ -1,0 +1,36 @@
+# LeRobot bipedal platform (no arms) — real assets, wired for the zealot
+# walking_policy_v7 release (see its MODEL_CARD.md). Joint order alphabetical
+# (mjlab convention); gains/effort/action_scale per joint family from the
+# model card / zealot examples/biped/sim2sim_xval.py.
+name: lerobot_biped_v7
+
+mjcf_path: /home/xavier/Documents/work/lerobot-humanoid-design/to_real_robot/bipedal_plateform_no_arms/mjcf/sim2sim_torque_scene.xml
+urdf_path: /home/xavier/Documents/work/lerobot-humanoid-design/to_real_robot/bipedal_plateform_no_arms/urdf/robot.urdf
+
+joint_names:
+  - anklex_left
+  - anklex_right
+  - ankley_left
+  - ankley_right
+  - hipx_left
+  - hipx_right
+  - hipy_left
+  - hipy_right
+  - hipz_left
+  - hipz_right
+  - knee_left
+  - knee_right
+
+foot_names: [foot_left, foot_right]
+
+# Default pose is the zero pose for this model (joint_pos_rel reference).
+default_joint_pos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# Physical torque-PD gains (kp, kd) and effort caps, per joint (alphabetical):
+#            anklex_l anklex_r ankley_l ankley_r hipx_l hipx_r hipy_l hipy_r hipz_l hipz_r knee_l knee_r
+kp:           [40,     40,      40,      40,      160,   160,   240,   240,   120,   120,   240,   240]
+kd:           [2.25,   2.25,    2.25,    2.25,    6,     6,     8,     8,     6,     6,     8,     8]
+torque_limit: [15,     15,      15,      15,      88,    88,    88,    88,    88,    88,    88,    88]
+action_scale: [0.55,   0.55,    0.55,    0.55,    0.55,  0.55,  0.367, 0.367, 0.733, 0.733, 0.367, 0.367]
+
+base_height_init: 0.66

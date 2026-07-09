@@ -1,0 +1,11 @@
+# Cross-simulator check of the zealot walking_policy_v7 ONNX.
+robot: robot/lerobot_biped_v7.yaml
+policy: policy/zealot_biped_v7.yaml
+sims: [mujoco, pybullet]
+episodes: 3
+max_steps: 600
+control_dt: 0.02
+seeds: [0, 1, 2]
+fall_height: 0.40
+fall_tilt: 0.7
+render: false

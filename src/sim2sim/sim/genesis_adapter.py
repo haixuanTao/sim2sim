@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import RobotCfg
-from .base import Simulator
+from .base import CAPTURE_H, CAPTURE_W, Simulator
 from .state import RobotState, quat_to_projected_gravity, world_velocities_to_base
 
 
@@ -31,6 +31,7 @@ class GenesisSimulator(Simulator):
         self.robot_cfg: RobotCfg | None = None
         self._tau = None
         self._initialized = False
+        self._cam = None
 
     @staticmethod
     def is_available() -> bool:

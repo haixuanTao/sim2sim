@@ -17,7 +17,10 @@ contract needs two things the current bindings do **not** expose:
    velocity or per-joint position / velocity, and ``insert_mjcf`` returns only a
    :class:`MjcfSceneInfo` (``loaded`` / ``z_up``), not per-joint handles.
    ``viewer.sync(...)`` reads GPU state back *into the renderer* for display
-   only; ``NexusViewer`` is a *windowed* viewer with no off-screen read-back.
+   only. (Pixel read-back is no longer the gap: our patched build's
+   ``NexusViewer.snap_rgb()`` / ``snap_rgb_async()`` export frames, and
+   ``NexusViewer(headless=True)`` runs without a window — what's missing is
+   *physics-state* getters.)
 
 So :meth:`is_available` probes for the missing methods and reports the backend
 unavailable until dimforge adds them (at which point it auto-enables). The

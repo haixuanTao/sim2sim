@@ -30,6 +30,14 @@ _TERMS = {
     "joint_pos": lambda s, c: s.joint_pos,
     "joint_vel": lambda s, c: s.joint_vel,
     "last_action": lambda s, c: c["last_action"],
+    # 4-dim command block: [vx, vy, yaw_rate, 0] — some policies (e.g. the
+    # zealot/LeRobot biped walkers) train with a zero-padded command slot.
+    "velocity_command_pad4": lambda s, c: np.append(c["command"], 0.0),
+    # Gait clock (sin 2piphi, cos 2piphi); phi advances gait_dt/gait_period per
+    # control step and is 0 at reset. Requires ``gait_period`` in the policy cfg.
+    "gait_clock": lambda s, c: np.array(
+        [np.sin(2.0 * np.pi * c["gait_phase"]), np.cos(2.0 * np.pi * c["gait_phase"])]
+    ),
 }
 
 
@@ -52,9 +60,17 @@ class ObservationBuilder:
         self.default_joint_pos = robot_cfg.default_joint_pos.astype(np.float32)
         self.n_dof = robot_cfg.n_dof
         self._last_action = np.zeros(self.n_dof, dtype=np.float32)
+        # Gait clock: phase step per control tick (0 disables advancement).
+        if any(t.name == "gait_clock" for t in self.terms) and not policy_cfg.gait_period:
+            raise ValueError("obs term 'gait_clock' requires `gait_period` in the policy cfg")
+        self._phase_step = (
+            policy_cfg.gait_dt / policy_cfg.gait_period if policy_cfg.gait_period else 0.0
+        )
+        self._phase = 0.0
 
     def reset(self) -> None:
         self._last_action = np.zeros(self.n_dof, dtype=np.float32)
+        self._phase = 0.0
 
     def set_last_action(self, action: np.ndarray) -> None:
         self._last_action = np.asarray(action, dtype=np.float32).ravel()
@@ -71,6 +87,8 @@ class ObservationBuilder:
             "joint_pos": self.n_dof,
             "joint_vel": self.n_dof,
             "last_action": self.n_dof,
+            "velocity_command_pad4": 4,
+            "gait_clock": 2,
         }
         return sum(sizes[t.name] for t in self.terms)
 
@@ -79,9 +97,11 @@ class ObservationBuilder:
             "command": np.asarray(command, dtype=np.float32).ravel(),
             "default_joint_pos": self.default_joint_pos,
             "last_action": self._last_action,
+            "gait_phase": self._phase,
         }
         parts = [
             np.asarray(_TERMS[t.name](state, ctx), dtype=np.float32).ravel() * t.scale
             for t in self.terms
         ]
+        self._phase = (self._phase + self._phase_step) % 1.0
         return np.concatenate(parts).astype(np.float32)

@@ -14,7 +14,15 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import RobotCfg
-from .base import Simulator
+from .base import (
+    CAM_AZIMUTH,
+    CAM_DISTANCE,
+    CAM_ELEVATION,
+    CAM_LOOKAT,
+    CAPTURE_H,
+    CAPTURE_W,
+    Simulator,
+)
 from .state import RobotState, quat_to_projected_gravity, world_velocities_to_base
 
 
@@ -28,6 +36,9 @@ class PybulletSimulator(Simulator):
         self._dt = 0.005
         self.robot_cfg: RobotCfg | None = None
         self._render = False
+        self._capture = False
+        self._view = None
+        self._proj = None
 
     @staticmethod
     def is_available() -> bool:
@@ -35,12 +46,27 @@ class PybulletSimulator(Simulator):
 
         return importlib.util.find_spec("pybullet") is not None
 
-    def load(self, robot_cfg: RobotCfg, *, render: bool = False, seed: int = 0) -> None:
+    def load(
+        self, robot_cfg: RobotCfg, *, render: bool = False, capture: bool = False, seed: int = 0
+    ) -> None:
         import pybullet as p
         from pybullet_utils import bullet_client
 
         self.robot_cfg = robot_cfg
         self._render = render
+        self._capture = capture
+        if capture:
+            self._view = p.computeViewMatrixFromYawPitchRoll(
+                cameraTargetPosition=list(CAM_LOOKAT),
+                distance=CAM_DISTANCE,
+                yaw=CAM_AZIMUTH,
+                pitch=CAM_ELEVATION,
+                roll=0,
+                upAxisIndex=2,
+            )
+            self._proj = p.computeProjectionMatrixFOV(
+                fov=45, aspect=CAPTURE_W / CAPTURE_H, nearVal=0.1, farVal=20
+            )
         mode = p.GUI if render else p.DIRECT
         self._bc = bullet_client.BulletClient(connection_mode=mode)
         bc = self._bc
@@ -126,6 +152,17 @@ class PybulletSimulator(Simulator):
             projected_gravity=quat_to_projected_gravity(quat),
             sim_time=0.0,  # pybullet has no intrinsic clock; runner tracks time
         )
+
+    def render(self) -> np.ndarray | None:
+        if not self._capture or self._bc is None:
+            return None
+        import pybullet as p
+
+        _, _, rgba, _, _ = self._bc.getCameraImage(
+            CAPTURE_W, CAPTURE_H, self._view, self._proj, renderer=p.ER_TINY_RENDERER
+        )
+        arr = np.reshape(np.asarray(rgba, dtype=np.uint8), (CAPTURE_H, CAPTURE_W, 4))
+        return arr[:, :, :3]
 
     def close(self) -> None:
         if self._bc is not None:

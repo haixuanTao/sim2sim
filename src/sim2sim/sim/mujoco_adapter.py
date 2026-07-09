@@ -12,7 +12,15 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import RobotCfg
-from .base import Simulator
+from .base import (
+    CAM_AZIMUTH,
+    CAM_DISTANCE,
+    CAM_ELEVATION,
+    CAM_LOOKAT,
+    CAPTURE_H,
+    CAPTURE_W,
+    Simulator,
+)
 from .state import RobotState, quat_to_projected_gravity, world_velocities_to_base
 
 
@@ -27,6 +35,8 @@ class MujocoSimulator(Simulator):
         self._joint_qvel_adr: np.ndarray | None = None  # qvel (dof) index per joint
         self._actuator_ids: np.ndarray | None = None
         self.robot_cfg: RobotCfg | None = None
+        self._renderer = None
+        self._cam = None
 
     @staticmethod
     def is_available() -> bool:
@@ -34,13 +44,23 @@ class MujocoSimulator(Simulator):
 
         return importlib.util.find_spec("mujoco") is not None
 
-    def load(self, robot_cfg: RobotCfg, *, render: bool = False, seed: int = 0) -> None:
+    def load(
+        self, robot_cfg: RobotCfg, *, render: bool = False, capture: bool = False, seed: int = 0
+    ) -> None:
         import mujoco
 
         self._mj = mujoco
         self.robot_cfg = robot_cfg
         self.model = mujoco.MjModel.from_xml_path(robot_cfg.resolve(robot_cfg.mjcf_path))
         self.data = mujoco.MjData(self.model)
+
+        if capture:
+            self._renderer = mujoco.Renderer(self.model, height=CAPTURE_H, width=CAPTURE_W)
+            self._cam = mujoco.MjvCamera()
+            self._cam.lookat[:] = CAM_LOOKAT
+            self._cam.distance = CAM_DISTANCE
+            self._cam.azimuth = CAM_AZIMUTH
+            self._cam.elevation = CAM_ELEVATION
 
         # Map canonical joint names -> qpos/qvel addresses and actuators. Doing
         # this once is what enforces the canonical joint order on every read.
@@ -108,3 +128,14 @@ class MujocoSimulator(Simulator):
             projected_gravity=quat_to_projected_gravity(quat),
             sim_time=float(self.data.time),
         )
+
+    def render(self) -> np.ndarray | None:
+        if self._renderer is None:
+            return None
+        self._renderer.update_scene(self.data, camera=self._cam)
+        return self._renderer.render()
+
+    def close(self) -> None:
+        if self._renderer is not None:
+            self._renderer.close()
+            self._renderer = None

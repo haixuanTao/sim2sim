@@ -38,8 +38,17 @@ def run_episode(
     cmd_gen: CommandGenerator,
     eval_cfg: EvalCfg,
     seed: int,
+    frame_sink=None,
+    stop_on_fall: bool = True,
 ) -> EpisodeMetrics:
-    """Run a single seeded episode and return its metrics."""
+    """Run a single seeded episode and return its metrics.
+
+    ``frame_sink``, if given, is called once per control step with the RGB frame
+    from ``sim.render()`` (skipped when the backend returns ``None``) — this is
+    how the recording driver captures video without duplicating the loop.
+    ``stop_on_fall=False`` keeps the episode running after a fall, so a recording
+    shows the full clip instead of cutting off the moment the robot tips.
+    """
     rng = np.random.default_rng(seed)
     command = cmd_gen.sample(rng)
 
@@ -72,7 +81,13 @@ def run_episode(
             state = sim.get_state()
 
         acc.update(state, command, action, torque)
-        if acc.fell:
+
+        if frame_sink is not None:
+            frame = sim.render()
+            if frame is not None:
+                frame_sink(frame)
+
+        if acc.fell and stop_on_fall:
             break
 
     return acc.finalize()
