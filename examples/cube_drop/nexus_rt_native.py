@@ -10,6 +10,7 @@ Run:  python examples/cube_drop/nexus_rt_native.py
 
 from __future__ import annotations
 
+import argparse
 import time
 from pathlib import Path
 
@@ -24,6 +25,11 @@ W, H = 480, 368  # match the genesis/isaac native-RT demos
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-capture", action="store_true",
+                    help="skip the frame readback (and the MP4): benchmark the sim+trace loop with frames staying on the GPU")
+    args = ap.parse_args()
+
     # Headless: no window/swapchain, so each raytrace_frame() accumulation
     # pass is not throttled by the display's vsync.
     viewer = nx.NexusViewer(W, H, headless=True)
@@ -85,7 +91,7 @@ def main() -> None:
     t_phys = t_sync = t_render = t_read = 0.0
     n_loops = 0
     t_loop = time.perf_counter()
-    while len(frames) < N_FRAMES:
+    while (n_loops if args.no_capture else len(frames)) < N_FRAMES:
         t = time.perf_counter()
         pipeline.simulate(viewer, state, ts)
         # State read blocks until the async GPU solver finishes — bills physics
@@ -105,16 +111,25 @@ def main() -> None:
             break
         # Pipelined readback: previous frame (None first call) while this
         # frame's GPU->CPU copy runs in the background.
-        t = time.perf_counter()
-        frame = viewer.snap_rgb_async()
-        t_read += time.perf_counter() - t
+        if not args.no_capture:
+            t = time.perf_counter()
+            frame = viewer.snap_rgb_async()
+            t_read += time.perf_counter() - t
+            if frame is not None:
+                frames.append(frame)
         n_loops += 1
-        if frame is not None:
+    if not args.no_capture:
+        frame = viewer.snap_rgb_flush()
+        if frame is not None and len(frames) < N_FRAMES:
             frames.append(frame)
-    frame = viewer.snap_rgb_flush()
-    if frame is not None and len(frames) < N_FRAMES:
-        frames.append(frame)
     rend_s = time.perf_counter() - t_loop
+
+    if args.no_capture:
+        print(f"[fps-nocapture] nexus-rt-native: {n_loops} frames in {rend_s:.2f}s = {n_loops / rend_s:.1f} gen-fps")
+        n = max(n_loops, 1)
+        print(f"[segments] nexus-rt-native: physics={1e3 * t_phys / n:.2f}ms sync={1e3 * t_sync / n:.2f}ms "
+              f"render={1e3 * t_render / n:.2f}ms readback={1e3 * t_read / n:.2f}ms")
+        return
 
     out = Path(__file__).parent / "cube_rt_nexus_native.mp4"
     imageio.mimsave(out, frames, fps=FPS)

@@ -11,12 +11,14 @@ Run:  MUJOCO_GL=egl python examples/cube_drop/mujoco_cube.py
 
 from __future__ import annotations
 
+import argparse
 import os
 import time
 from pathlib import Path
 
 import imageio.v2 as imageio
 import mujoco
+import numpy as np
 
 DURATION_S = 5.0
 FPS = 30
@@ -40,7 +42,26 @@ MJCF = """
 """
 
 
+_PX1 = np.empty((1, 1, 3), np.uint8)
+_RECT1 = mujoco.MjrRect(0, 0, 1, 1)
+
+
+def render_noread(renderer: mujoco.Renderer) -> None:
+    """Draw the scene without the full-frame GPU->CPU readback. A 1x1-pixel
+    readPixels still runs so the GL pipeline is flushed and the draw is
+    honestly timed (same idea as the Nexus/Genesis scripts' --no-capture)."""
+    if renderer._gl_context:
+        renderer._gl_context.make_current()
+    mujoco.mjr_render(renderer._rect, renderer._scene, renderer._mjr_context)
+    mujoco.mjr_readPixels(_PX1, None, _RECT1, renderer._mjr_context)
+
+
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--no-capture", action="store_true",
+                    help="skip the frame readback (and the MP4): benchmark the sim+render loop with frames staying on the GPU")
+    args = ap.parse_args()
+
     out = Path(__file__).parent / "cube_mujoco.mp4"
     model = mujoco.MjModel.from_xml_string(MJCF)
     data = mujoco.MjData(model)
@@ -67,10 +88,18 @@ def main() -> None:
             t_phys += time.perf_counter() - t
             t = time.perf_counter()
             renderer.update_scene(data, camera=cam)
-            frames.append(renderer.render())
+            if args.no_capture:
+                render_noread(renderer)
+            else:
+                frames.append(renderer.render())
             t_render += time.perf_counter() - t
         gen = time.perf_counter() - t0
 
+    if args.no_capture:
+        print(f"[fps-nocapture] mujoco: {n_frames} frames in {gen:.2f}s = {n_frames / gen:.1f} gen-fps")
+        n = n_frames
+        print(f"[segments] mujoco: physics={1e3 * t_phys / n:.2f}ms render={1e3 * t_render / n:.2f}ms")
+        return
     imageio.mimsave(out, frames, fps=FPS)
     print(f"wrote {out}  ({len(frames)} frames, {DURATION_S:.0f}s @ {FPS}fps)")
     print(f"[fps] mujoco: {len(frames)} frames in {gen:.2f}s = {len(frames) / gen:.1f} gen-fps")

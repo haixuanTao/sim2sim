@@ -17,6 +17,11 @@ confirm each engine simulates + renders on this machine.
 
 ## Benchmark harness + results page
 
+**Live page:** https://claude.ai/code/artifact/2dd2404c-743a-44d3-bbf0-a6ab59647619
+(multi-machine: RTX 5090 desktop + RTX 5080 laptop panels, no-readback basis,
+plus the 2,048-env batch-physics scene; note the link is private until shared
+from the artifact's share menu — the canonical copy is `site/index.html` below).
+
 All the numbers below (plus hardware info) are aggregated into
 [`benchmark_results.json`](benchmark_results.json) by
 [`benchmark.py`](benchmark.py), which also regenerates the static results page
@@ -74,6 +79,49 @@ setup (model load / GPU pipeline compile).
   until first contact — found with `body_pose()` (frozen quaternion during free
   fall) and fixed in the `fix/initial-velocities-from-rapier` branch; rotation
   now integrates at exactly |ω|·dt.
+
+## Batch physics — 2,048 parallel envs
+
+[`../lerobot_legs/batch_bench.py`](../lerobot_legs/batch_bench.py) steps the
+LeRobot scene with 2,048 parallel environments, physics only (no rendering,
+one device sync per timed window). Nexus runs one robot per environment via
+the per-env `insert_mjcf` bindings ([dimforge/nexus #16](https://github.com/dimforge/nexus/pull/16))
+— packing all robots into env 0 blows GPU memory quadratically (each
+contact-constraint slot stores a dense M⁻¹ column sized to the whole env's
+DOF count). Results are Scene 3 on the results page. Note an env-step is one
+*engine* step and dt differs per engine (Nexus 16.7 ms with the substep
+cascade inside; others 5 ms).
+
+```bash
+.venv/bin/python examples/lerobot_legs/batch_bench.py --sim genesis --envs 2048
+```
+
+## Startup — time to first physics step
+
+[`../lerobot_legs/boot_bench.py`](../lerobot_legs/boot_bench.py) measures the
+dev-loop boot cost: process start → one completed physics step of the LeRobot
+scene (single env), split into imports / engine init / scene build + first
+step. **Warm** = JIT kernel caches populated (every rerun); **cold** = kernel
+cache emptied (first-ever run, or after an engine/driver upgrade). Measured on
+the RTX 5090 desktop:
+
+| Backend | warm | cold caches |
+|---------|-----:|------------:|
+| MuJoCo | 0.25 s | = warm (no JIT) |
+| Nexus (WebGPU) | 0.90 s | = warm (shaders precompiled in the wheel) |
+| Nexus (cuda-oxide + CUDA graph, incl. capture) | 1.12 s | = warm (cubins precompiled) |
+| mjlab (MuJoCo-Warp) | 2.08 s | **14.4 s** (Warp kernel compile) |
+| Genesis | 5.11 s | **74.2 s** (Taichi JIT: 63.7 s build + 8.5 s first step) |
+| Isaac Sim | — | ~1.5 min (laptop; crashes on the desktop's driver 595) + one-time ~2 min RTX shader cache |
+
+Cold runs redirect the kernel caches to an empty dir instead of deleting them
+(`XDG_CACHE_HOME` for Genesis — it ignores `TI_OFFLINE_CACHE_FILE_PATH` and
+caches under `~/.cache/genesis` — and `WARP_CACHE_PATH` for mjlab).
+
+```bash
+.venv/bin/python examples/lerobot_legs/boot_bench.py --sim genesis            # warm
+XDG_CACHE_HOME=/tmp/cold .venv/bin/python examples/lerobot_legs/boot_bench.py --sim genesis  # cold
+```
 
 ## Ray tracing
 
