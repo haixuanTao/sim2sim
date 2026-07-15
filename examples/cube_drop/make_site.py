@@ -535,13 +535,16 @@ row copy + reusing the staging buffer cut readback to ~5 ms (18×) — see
 <a href="https://github.com/dimforge/kiss3d/pull/397">kiss3d #397 (readback fix)</a>,
 <a href="https://github.com/dimforge/nexus/pull/7">nexus #7 (frame export)</a> and
 <a href="https://github.com/dimforge/nexus/pull/8">nexus #8 (Python ray tracing)</a>.</p>
-<p class="sub"><strong>Isaac Sim on the desktop — physics yes, rendering no:</strong> the
-Omniverse RTX <em>renderer</em> crashes on driver 595.71.05 (known incompatibility with the
-R590/595 branch; fix promised in Isaac Sim 6.0), so Isaac's raster/RT rows exist only on the
-laptop panel. Headless <em>physics</em> works via Isaac Lab's AppLauncher kit experience (which
-skips the crashing RTX plugins) with all debug-vis markers disabled — that's how the desktop's
-Scene-3 and Startup Isaac rows were measured. Genesis native ray tracing on the desktop runs via
-a from-source LuisaRender build (CUDA backend, pip-wheel CUDA 12.9 toolchain).</p>
+<p class="sub"><strong>Isaac Sim on the desktop:</strong> Isaac Sim <em>5.x</em>'s Omniverse RTX
+renderer crashes on driver 595.71.05 (R590/595-branch incompatibility — this box rendered fine
+on driver 580 until the 2026-07-10 upgrade), so the 5.x raster/RT rows exist only on the laptop
+panel; the desktop Scene-3 and Startup rows run headless physics via Isaac Lab's AppLauncher kit
+experience, which skips the crashing plugins. <strong>Isaac Sim 6.0.1.0 fixes the renderer on
+this driver</strong> (verified 2026-07-15: full RTX experience boots in 11 s and renders camera
+pixels; separate venv at <code>~/rt_build/isaac6-venv</code>, not yet paired with Isaac Lab) —
+desktop Isaac render rows are now possible and pending a port of the render demos to 6.0.
+Genesis native ray tracing on the desktop runs via a from-source LuisaRender build (CUDA
+backend, pip-wheel CUDA 12.9 toolchain).</p>
 <p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
 where that time goes: <strong>physics</strong> (solver steps), <strong>sync</strong> (GPU-sim state
 to host), <strong>render</strong> (draw / path-trace), <strong>readback</strong> (frame pixels to
