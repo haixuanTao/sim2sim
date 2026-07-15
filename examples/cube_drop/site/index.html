@@ -117,11 +117,13 @@ row copy + reusing the staging buffer cut readback to ~5 ms (18×) — see
 <a href="https://github.com/dimforge/kiss3d/pull/397">kiss3d #397 (readback fix)</a>,
 <a href="https://github.com/dimforge/nexus/pull/7">nexus #7 (frame export)</a> and
 <a href="https://github.com/dimforge/nexus/pull/8">nexus #8 (Python ray tracing)</a>.</p>
-<p class="sub"><strong>Why Isaac Sim only appears on the laptop panel:</strong> Isaac Sim 5.x's
-Omniverse RTX renderer crashes at startup on the desktop's driver 595.71.05 (known NVIDIA
-incompatibility with the R590/595 branch; validated driver is 580.65.06, fix promised in
-Isaac Sim 6.0 — re-verified 2026-07-15). Genesis native ray tracing on the desktop runs via a
-from-source LuisaRender build (CUDA backend, pip-wheel CUDA 12.9 toolchain).</p>
+<p class="sub"><strong>Isaac Sim on the desktop — physics yes, rendering no:</strong> the
+Omniverse RTX <em>renderer</em> crashes on driver 595.71.05 (known incompatibility with the
+R590/595 branch; fix promised in Isaac Sim 6.0), so Isaac's raster/RT rows exist only on the
+laptop panel. Headless <em>physics</em> works via Isaac Lab's AppLauncher kit experience (which
+skips the crashing RTX plugins) with all debug-vis markers disabled — that's how the desktop's
+Scene-3 and Startup Isaac rows were measured. Genesis native ray tracing on the desktop runs via
+a from-source LuisaRender build (CUDA backend, pip-wheel CUDA 12.9 toolchain).</p>
 <p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
 where that time goes: <strong>physics</strong> (solver steps), <strong>sync</strong> (GPU-sim state
 to host), <strong>render</strong> (draw / path-trace), <strong>readback</strong> (frame pixels to
@@ -130,7 +132,7 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 
 <section class='mpanel' data-mid='desktop-5090'>
 <div class='tiles'><div class='tile'><span class='tile-label'>GPU</span><span class='tile-val'>NVIDIA GeForce RTX 5090</span></div><div class='tile'><span class='tile-label'>Driver</span><span class='tile-val'>595.71.05</span></div><div class='tile'><span class='tile-label'>VRAM</span><span class='tile-val'>32607 MiB</span></div><div class='tile'><span class='tile-label'>CPU</span><span class='tile-val'>Intel(R) Core(TM) Ultra 9 285K</span></div><div class='tile'><span class='tile-label'>RAM</span><span class='tile-val'>62 GB</span></div><div class='tile'><span class='tile-label'>OS</span><span class='tile-val'>Linux 6.17.0-35-generic</span></div></div>
-<p class='sub'>29 shown measurements · generated 2026-07-15T17:09:03 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
+<p class='sub'>30 shown measurements · generated 2026-07-15T18:18:48 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
@@ -241,6 +243,11 @@ env-step is one engine step, see the table).</p>
   <span class="bar-track"><span class="bar seg-physics" style="width:12.6%"></span></span>
   <span class="bar-val">367,359 <span class="sub">env-steps/s</span></span>
 </div>
+<div class="bar-row" tabindex="0" title="Isaac Sim: 262,096 env-steps/s — PhysX 5 via the WBC-AGILE manager-based env (Velocity-LeRobot-NoArms-v0, zero actions, debug-vis off) — includes Isaac Lab&#x27;s observation/reward managers; PhysX cannot be driven bare on this driver. Counted as real 5 ms physics steps (env.step = 4-step decimation), solver iters 8/4 per the WBC-AGILE asset config.">
+  <span class="bar-label">Isaac Sim<span class="sub"> dt 5 ms</span></span>
+  <span class="bar-track"><span class="bar seg-physics" style="width:9.0%"></span></span>
+  <span class="bar-val">262,096 <span class="sub">env-steps/s</span></span>
+</div>
 <div class="bar-row" tabindex="0" title="Nexus: 138,640 env-steps/s — WebGPU, one robot per environment via per-env insert_mjcf bindings written this session (env= kwarg + a collisions-capacity knob: the 4096-pairs/env default bound 9.4 GiB at 2048 envs; the scene needs ~7). Passive robots (no torque API in the bindings), 200-step window, one sync. Single-env packing capped at 96 robots — per-env scales linearly.">
   <span class="bar-label">Nexus<span class="sub"> dt 16.7 ms</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:4.7%"></span></span>
@@ -264,33 +271,33 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <div class="chart" role="img" aria-label="Bar chart of seconds until the first physics step per backend (lower is better)">
 <div class="bar-row" tabindex="0" title="MuJoCo: 0.25 s to first step — imports 0.10 s, engine init 0.00 s, scene + first step 0.15 s — CPU; import mujoco + MJCF compile + first mj_step. No JIT cache — cold = warm">
   <span class="bar-label">MuJoCo</span>
-  <span class="bar-track"><span class="bar seg-sync" style="width:1.96%"></span><span class="bar seg-render" style="width:2.94%"></span></span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:1.83%"></span><span class="bar seg-render" style="width:2.74%"></span></span>
   <span class="bar-val">0.25 s</span>
 </div>
 <div class="bar-row" tabindex="0" title="Nexus: 0.90 s to first step — imports 0.01 s, engine init 0.31 s, scene + first step 0.58 s — WebGPU: viewer + pipeline compile + insert_mjcf (5 convex hulls) + finalize + first step. Shaders precompiled into the wheel — cold = warm">
   <span class="bar-label">Nexus</span>
-  <span class="bar-track"><span class="bar seg-sync" style="width:0.20%"></span><span class="bar seg-physics" style="width:6.07%"></span><span class="bar seg-render" style="width:11.35%"></span></span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:0.18%"></span><span class="bar seg-physics" style="width:5.67%"></span><span class="bar seg-render" style="width:10.60%"></span></span>
   <span class="bar-val">0.90 s</span>
 </div>
 <div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 1.12 s to first step — imports 0.01 s, engine init 0.47 s, scene + first step 0.64 s — native CUDA: same + 5-step warmup + CUDA-graph capture before first replay. Cubins precompiled into the wheel — cold = warm">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)</span>
-  <span class="bar-track"><span class="bar seg-sync" style="width:0.20%"></span><span class="bar seg-physics" style="width:9.20%"></span><span class="bar seg-render" style="width:12.52%"></span></span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:0.18%"></span><span class="bar seg-physics" style="width:8.59%"></span><span class="bar seg-render" style="width:11.70%"></span></span>
   <span class="bar-val">1.12 s</span>
 </div>
 <div class="bar-row" tabindex="0" title="mjlab (MuJoCo-Warp): 2.08 s to first step — imports 1.43 s, engine init 0.27 s, scene + first step 0.38 s — import mujoco+torch+mjlab + wp.init() + Simulation(num_envs=1) + first step; cold = Warp kernel cache emptied (12.8 s of kernel compile)">
   <span class="bar-label">mjlab (MuJoCo-Warp)</span>
-  <span class="bar-track"><span class="bar seg-sync" style="width:27.98%"></span><span class="bar seg-physics" style="width:5.28%"></span><span class="bar seg-render" style="width:7.44%"></span></span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:26.14%"></span><span class="bar seg-physics" style="width:4.94%"></span><span class="bar seg-render" style="width:6.95%"></span></span>
   <span class="bar-val">2.08 s<br><span class="sub">cold caches: 14.4 s</span></span>
 </div>
 <div class="bar-row" tabindex="0" title="Genesis: 5.11 s to first step — imports 1.59 s, engine init 0.19 s, scene + first step 3.33 s — import genesis + gs.init(gpu) + scene.build() + first step; cold = ~/.cache/genesis emptied (63.7 s build JIT + 8.5 s first-step JIT)">
   <span class="bar-label">Genesis</span>
-  <span class="bar-track"><span class="bar seg-sync" style="width:31.12%"></span><span class="bar seg-physics" style="width:3.72%"></span><span class="bar seg-render" style="width:65.17%"></span></span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:29.07%"></span><span class="bar seg-physics" style="width:3.47%"></span><span class="bar seg-render" style="width:60.88%"></span></span>
   <span class="bar-val">5.11 s<br><span class="sub">cold caches: 74.2 s</span></span>
 </div>
-<div class="bar-row">
+<div class="bar-row" tabindex="0" title="Isaac Sim: 5.47 s to first step — imports 0.04 s, engine init 2.33 s, scene + first step 3.10 s — AppLauncher (headless kit experience) + InteractiveScene(1 env, WBC-AGILE LeRobot URDF) + first step; RTX shader cache warm. Cold adds the one-time ~2 min RTX shader-cache compile. The bare SimulationApp default experience crashes on driver 595 — AppLauncher&#x27;s headless kit is the working path.">
   <span class="bar-label">Isaac Sim</span>
-  <span class="bar-track"></span>
-  <span class="bar-val err">not measurable on this box (Isaac Sim 5.x RTX crash on driver 595); ~1.5 min on the laptop, plus one-time ~2 m</span>
+  <span class="bar-track"><span class="bar seg-sync" style="width:0.73%"></span><span class="bar seg-physics" style="width:42.60%"></span><span class="bar seg-render" style="width:56.67%"></span></span>
+  <span class="bar-val">5.47 s</span>
 </div>
 </div>
 <details><summary>Full data table</summary>
@@ -320,12 +327,13 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>Genesis</td><td>LeRobot legs × 2,048 — Physics only — 2,048 parallel envs</td><td>—</td><td>—</td><td>—</td><td>2,296,140</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus</td><td>LeRobot legs × 2,048 — Physics only — 2,048 parallel envs</td><td>—</td><td>—</td><td>—</td><td>138,640</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs × 2,048 — Physics only — 2,048 parallel envs</td><td>—</td><td>—</td><td>—</td><td>113,159</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
-<tr><td>Isaac Sim</td><td>Startup — Time to first step — single env, warm JIT caches</td><td><span class='err'>failed: not measurable on this box (Isaac Sim 5.x RTX crash on driver 595); ~1.5 min on </span></td><td></td><td></td><td></td><td></td><td></td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
+<tr><td>Isaac Sim</td><td>LeRobot legs × 2,048 — Physics only — 2,048 parallel envs</td><td>—</td><td>—</td><td>—</td><td>262,096</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>MuJoCo</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>0.25 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>mjlab (MuJoCo-Warp)</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>2.08 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Genesis</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>5.11 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>0.90 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>1.12 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
+<tr><td>Isaac Sim</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>5.47 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 </tbody>
 </table></div></details>
 <h3>Videos</h3>

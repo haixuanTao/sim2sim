@@ -13,7 +13,7 @@
         "gpu_driver": "595.71.05",
         "gpu_vram": "32607 MiB"
       },
-      "generated": "2026-07-15T17:09:03",
+      "generated": "2026-07-15T18:18:48",
       "rows": [
         {
           "backend": "mujoco",
@@ -297,12 +297,6 @@
           "pipeline": "native CUDA (cuda-oxide), whole-step CUDA-graph replay, one robot per env (per-env insert_mjcf bindings + collisions-capacity knob). NOTE: lands ~18% below the WebGPU row \u2014 this box currently has an unresolved driver-state regression where graph replay is slower than eager launch (driver 595.71.05, also seen in the zealot trainer); treat as a lower bound."
         },
         {
-          "backend": "isaac",
-          "mode": "boot",
-          "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
-          "error": "not measurable on this box (Isaac Sim 5.x RTX crash on driver 595); ~1.5 min on the laptop, plus one-time ~2 min RTX shader-cache compile"
-        },
-        {
           "backend": "mujoco",
           "mode": "boot",
           "boot_s": 0.25,
@@ -348,6 +342,23 @@
           "boot_init_s": 0.47,
           "pipeline": "native CUDA: same + 5-step warmup + CUDA-graph capture before first replay. Cubins precompiled into the wheel \u2014 cold = warm",
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)"
+        },
+        {
+          "backend": "isaac",
+          "mode": "lerobot_batch",
+          "physics_steps_s": 262096,
+          "dt_note": "dt 5 ms",
+          "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
+          "pipeline": "PhysX 5 via the WBC-AGILE manager-based env (Velocity-LeRobot-NoArms-v0, zero actions, debug-vis off) \u2014 includes Isaac Lab's observation/reward managers; PhysX cannot be driven bare on this driver. Counted as real 5 ms physics steps (env.step = 4-step decimation), solver iters 8/4 per the WBC-AGILE asset config."
+        },
+        {
+          "backend": "isaac",
+          "mode": "boot",
+          "boot_s": 5.47,
+          "boot_imports_s": 0.04,
+          "boot_init_s": 2.33,
+          "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
+          "pipeline": "AppLauncher (headless kit experience) + InteractiveScene(1 env, WBC-AGILE LeRobot URDF) + first step; RTX shader cache warm. Cold adds the one-time ~2 min RTX shader-cache compile. The bare SimulationApp default experience crashes on driver 595 \u2014 AppLauncher's headless kit is the working path."
         }
       ]
     },

@@ -46,8 +46,10 @@ GAINS = {
 
 def report(tag: str, envs: int, steps: int, secs: float, dt: float) -> None:
     rate = envs * steps / secs
+    # flush: Isaac's app.close() hard-exits the process and would discard
+    # buffered stdout, silently eating the result line.
     print(f"[batch] {tag}: envs={envs} steps={steps} in {secs:.2f}s "
-          f"= {rate:,.0f} env-steps/s (dt={1e3 * dt:g}ms)")
+          f"= {rate:,.0f} env-steps/s (dt={1e3 * dt:g}ms)", flush=True)
 
 
 def bench_mujoco(envs: int, steps: int) -> None:
@@ -129,6 +131,60 @@ def bench_genesis(envs: int, steps: int) -> None:
         scene.step()
     _ = robot.get_pos()
     report("genesis", envs, steps, time.perf_counter() - t0, dt)
+
+
+def bench_isaac(envs: int, steps: int) -> None:
+    """Isaac Lab / PhysX 5 via the WBC-AGILE manager-based LeRobot env.
+
+    Drives Velocity-LeRobot-NoArms-v0 (the same task zealot's README benchmarks
+    against) with zero actions — env.step = physics decimation + observation/
+    reward managers, so this row includes manager overhead the other engines'
+    physics-only rows don't have. Needs ~/WBC-AGILE on PYTHONPATH and the
+    Isaac Lab venv python (~/isaaclab/.venv). A bare SimulationContext loop
+    hangs after the first step on this driver; the manager env path is the
+    configuration that verifiably works (it's how the training benchmarks ran).
+    """
+    from isaaclab.app import AppLauncher
+
+    app = AppLauncher(headless=True).app
+
+    import gymnasium as gym
+    import torch
+    import agile.rl_env.tasks  # noqa: F401  (registers the LeRobot tasks)
+    from isaaclab_tasks.utils import parse_env_cfg
+
+    env_cfg = parse_env_cfg("Velocity-LeRobot-NoArms-v0", device="cuda:0",
+                            num_envs=envs)
+    # Kill every debug-vis marker: the velocity-arrow point instancers go
+    # through the RTX visualization path that crashes on driver 595 (the same
+    # class of crash as the bare SimulationApp).
+    for grp in ("commands", "observations", "events", "rewards"):
+        cfg_grp = getattr(env_cfg, grp, None)
+        for name in dir(cfg_grp):
+            term = getattr(cfg_grp, name, None)
+            if hasattr(term, "debug_vis"):
+                term.debug_vis = False
+    t_setup = time.perf_counter()
+    env = gym.make("Velocity-LeRobot-NoArms-v0", cfg=env_cfg)
+    env.reset()
+    print(f"[setup] {envs} envs built ({time.perf_counter() - t_setup:.1f}s)", flush=True)
+
+    act = torch.zeros(envs, env.unwrapped.action_manager.total_action_dim,
+                      device=env.unwrapped.device)
+    # env.step advances `decimation` physics steps per call; count real steps.
+    decimation = env.unwrapped.cfg.decimation
+    dt = env.unwrapped.cfg.sim.dt
+    for _ in range(10):
+        env.step(act)
+    torch.cuda.synchronize()
+
+    t0 = time.perf_counter()
+    for _ in range(steps):
+        env.step(act)
+    torch.cuda.synchronize()
+    report("isaac", envs, steps * decimation, time.perf_counter() - t0, dt)
+    env.close()
+    app.close()
 
 
 def _grid_xml(envs: int) -> str:
@@ -266,7 +322,8 @@ def bench_nexus(envs: int, steps: int, cuda_graph: bool) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sim", required=True,
-                    choices=["mujoco", "mjlab", "genesis", "nexus", "nexus_cuda_graph"])
+                    choices=["mujoco", "mjlab", "genesis", "isaac",
+                             "nexus", "nexus_cuda_graph"])
     ap.add_argument("--envs", type=int, default=2048)
     ap.add_argument("--steps", type=int, default=200)
     args = ap.parse_args()
@@ -277,6 +334,8 @@ def main() -> None:
         bench_mjlab(args.envs, args.steps)
     elif args.sim == "genesis":
         bench_genesis(args.envs, args.steps)
+    elif args.sim == "isaac":
+        bench_isaac(args.envs, args.steps)
     else:
         bench_nexus(args.envs, args.steps, cuda_graph=args.sim == "nexus_cuda_graph")
 

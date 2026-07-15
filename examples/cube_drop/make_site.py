@@ -535,11 +535,13 @@ row copy + reusing the staging buffer cut readback to ~5 ms (18×) — see
 <a href="https://github.com/dimforge/kiss3d/pull/397">kiss3d #397 (readback fix)</a>,
 <a href="https://github.com/dimforge/nexus/pull/7">nexus #7 (frame export)</a> and
 <a href="https://github.com/dimforge/nexus/pull/8">nexus #8 (Python ray tracing)</a>.</p>
-<p class="sub"><strong>Why Isaac Sim only appears on the laptop panel:</strong> Isaac Sim 5.x's
-Omniverse RTX renderer crashes at startup on the desktop's driver 595.71.05 (known NVIDIA
-incompatibility with the R590/595 branch; validated driver is 580.65.06, fix promised in
-Isaac Sim 6.0 — re-verified 2026-07-15). Genesis native ray tracing on the desktop runs via a
-from-source LuisaRender build (CUDA backend, pip-wheel CUDA 12.9 toolchain).</p>
+<p class="sub"><strong>Isaac Sim on the desktop — physics yes, rendering no:</strong> the
+Omniverse RTX <em>renderer</em> crashes on driver 595.71.05 (known incompatibility with the
+R590/595 branch; fix promised in Isaac Sim 6.0), so Isaac's raster/RT rows exist only on the
+laptop panel. Headless <em>physics</em> works via Isaac Lab's AppLauncher kit experience (which
+skips the crashing RTX plugins) with all debug-vis markers disabled — that's how the desktop's
+Scene-3 and Startup Isaac rows were measured. Genesis native ray tracing on the desktop runs via
+a from-source LuisaRender build (CUDA backend, pip-wheel CUDA 12.9 toolchain).</p>
 <p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
 where that time goes: <strong>physics</strong> (solver steps), <strong>sync</strong> (GPU-sim state
 to host), <strong>render</strong> (draw / path-trace), <strong>readback</strong> (frame pixels to

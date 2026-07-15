@@ -31,8 +31,9 @@ ROBOT_XML = MJCF_DIR / "robot.xml"
 
 def report(tag: str, imports: float, init: float, build: float, first_step: float) -> None:
     total = time.perf_counter() - T0
+    # flush: Isaac's app.close() hard-exits and discards buffered stdout.
     print(f"[boot] {tag}: imports={imports:.2f}s init={init:.2f}s build={build:.2f}s "
-          f"first_step={first_step:.2f}s total={total:.2f}s")
+          f"first_step={first_step:.2f}s total={total:.2f}s", flush=True)
 
 
 def boot_mujoco() -> None:
@@ -116,10 +117,70 @@ def boot_nexus(cuda_graph: bool) -> None:
            time.perf_counter() - T0 - t_imp - t_init - t_build)
 
 
+def boot_isaac() -> None:
+    """Isaac Lab via AppLauncher (headless kit experience — the bare
+    SimulationApp default experience crashes on driver 595). Run with the
+    Isaac Lab venv python (~/isaaclab/.venv). Scene mirrors bench_isaac in
+    batch_bench.py (WBC-AGILE LeRobot no-arms URDF, implicit PD)."""
+    from isaaclab.app import AppLauncher
+    t_imp = time.perf_counter() - T0
+    app = AppLauncher(headless=True).app
+    import torch
+    import isaaclab.sim as sim_utils
+    from isaaclab.actuators import ImplicitActuatorCfg
+    from isaaclab.assets import AssetBaseCfg
+    from isaaclab.assets.articulation import ArticulationCfg
+    from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
+    from isaaclab.utils import configclass
+    t_init = time.perf_counter() - T0 - t_imp
+
+    urdf = str(Path.home()
+               / "WBC-AGILE/agile/rl_env/assets/robots/lerobot_humanoid_no_arms_new.urdf")
+    robot_cfg = ArticulationCfg(
+        prim_path="{ENV_REGEX_NS}/Robot",
+        spawn=sim_utils.UrdfFileCfg(
+            asset_path=urdf, fix_base=False, merge_fixed_joints=False,
+            root_link_name="torso_subassembly",
+            joint_drive=sim_utils.UrdfConverterCfg.JointDriveCfg(
+                target_type="position",
+                gains=sim_utils.UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
+                    stiffness=0.0, damping=0.0)),
+            articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+                enabled_self_collisions=True,
+                solver_position_iteration_count=8,
+                solver_velocity_iteration_count=4)),
+        init_state=ArticulationCfg.InitialStateCfg(
+            pos=(0.0, 0.0, 0.72), rot=(0.9962, 0.0, -0.0872, 0.0)),
+        actuators={"legs": ImplicitActuatorCfg(
+            joint_names_expr=[".*"],
+            stiffness={".*hipz.*": 30, ".*hipx.*": 40, ".*hipy.*": 60,
+                       ".*knee.*": 60, ".*ankley.*": 20, ".*anklex.*": 20},
+            damping={".*hipz.*": 3, ".*hipx.*": 3, ".*hipy.*": 4,
+                     ".*knee.*": 4, ".*ankley.*": 1.5, ".*anklex.*": 1.5})},
+    )
+
+    @configclass
+    class SceneCfg(InteractiveSceneCfg):
+        ground = AssetBaseCfg(prim_path="/World/ground",
+                              spawn=sim_utils.GroundPlaneCfg())
+        robot: ArticulationCfg = robot_cfg
+
+    sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(dt=0.005, device="cuda:0"))
+    InteractiveScene(SceneCfg(num_envs=1, env_spacing=2.0))
+    sim.reset()
+    t_build = time.perf_counter() - T0 - t_imp - t_init
+    sim.step(render=False)
+    torch.cuda.synchronize()
+    report("isaac", t_imp, t_init, t_build,
+           time.perf_counter() - T0 - t_imp - t_init - t_build)
+    app.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sim", required=True,
-                    choices=["mujoco", "mjlab", "genesis", "nexus", "nexus_cuda_graph"])
+                    choices=["mujoco", "mjlab", "genesis", "isaac",
+                             "nexus", "nexus_cuda_graph"])
     args = ap.parse_args()
     if args.sim == "mujoco":
         boot_mujoco()
@@ -127,6 +188,8 @@ def main() -> None:
         boot_mjlab()
     elif args.sim == "genesis":
         boot_genesis()
+    elif args.sim == "isaac":
+        boot_isaac()
     else:
         boot_nexus(cuda_graph=args.sim == "nexus_cuda_graph")
 
