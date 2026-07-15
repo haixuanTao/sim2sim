@@ -56,7 +56,7 @@ KNOWN_RESULTS: list[dict] = [
      "video": "cube_nexus_cuda_graph.mp4",
      "video_url": "https://files.catbox.moe/y0wh6k.mp4", "source": "measured 2026-07-09 (idle GPU)"},
     {"backend": "nexus_cpu", "mode": "raster", "fps": 37.5, "resolution": "640x480",
-     "pipeline": "Rapier CPU physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 26.5 fps vsync-locked windowed)",
+     "pipeline": "CPU physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 26.5 fps vsync-locked windowed)",
      "video": "cube_nexus_cpu.mp4", "video_url": "https://files.catbox.moe/r7srcn.mp4", "source": "measured 2026-07-08"},
     # mode "rt_shared": physics steps/s + shared Mitsuba/OptiX tracer.
     {"backend": "mujoco", "mode": "rt_shared", "physics_steps_s": 408_000, "fps": 35.0,

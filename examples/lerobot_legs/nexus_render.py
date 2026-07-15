@@ -49,7 +49,13 @@ def main() -> None:
                     help="like --cuda, but capture the per-frame solver steps into a CUDA graph and replay it")
     ap.add_argument("--no-capture", action="store_true",
                     help="skip the frame readback (and the MP4): benchmark the sim+render loop with frames staying on the GPU")
+    ap.add_argument("--no-readback", action="store_true",
+                    help="additionally skip every per-frame GPU->host state read (scene sync + solver fence): "
+                         "pure GPU-resident throughput, drained once at the end. The rendered scene keeps its "
+                         "initial pose. Implies --no-capture.")
     args = ap.parse_args()
+    if args.no_readback:
+        args.no_capture = True
 
     # Headless: no window/swapchain, so capture is not vsync-throttled.
     viewer = nx.NexusViewer(W, H, headless=True)
@@ -123,10 +129,12 @@ def main() -> None:
         # Physics is submitted asynchronously; a state read blocks until the
         # solver finishes, so its GPU time is billed to this segment instead of
         # whichever later call happens to drain the queue.
-        viewer.read_multibody_links(state)
+        if not args.no_readback:
+            viewer.read_multibody_links(state)
         t_phys += time.perf_counter() - t
         t = time.perf_counter()
-        viewer.sync(state, ts)
+        if not args.no_readback:
+            viewer.sync(state, ts)
         t_sync += time.perf_counter() - t
         t = time.perf_counter()
         if args.rt:
@@ -135,7 +143,8 @@ def main() -> None:
             # state read waits on the shared queue, billing the trace here
             # rather than to readback. (On the CUDA backend it only drains the
             # physics stream, so there the trace still lands in readback.)
-            viewer.read_multibody_links(state)
+            if not args.no_readback:
+                viewer.read_multibody_links(state)
         else:
             ok = viewer.render_frame()
         t_render += time.perf_counter() - t
@@ -150,6 +159,10 @@ def main() -> None:
             if frame is not None:
                 frames.append(frame)
         n_loops += 1
+    if args.no_readback:
+        # Everything above only queued GPU work; block once on a state read so
+        # the wall clock covers all submitted physics before it stops.
+        viewer.read_multibody_links(state)
     if not args.no_capture:
         frame = viewer.snap_rgb_flush()  # collect the last in-flight frame
         if frame is not None and len(frames) < n_frames:
