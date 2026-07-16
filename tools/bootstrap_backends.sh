@@ -45,11 +45,16 @@
 #                               must both carry the cuda-oxide feature or cargo
 #                               will not resolve.
 #
-#                               And khal's feat/cuda-graph-capture-fixes pins
-#                               cuda-device to /home/xavier/cuda-oxide-src -- an
-#                               absolute path into another developer's home. It
-#                               cannot build anywhere else until repointed;
-#                               --nexus-src rewrites it at a local clone.
+#                               khal's feat/cuda-graph-capture-fixes used to pin
+#                               cuda-device at /home/xavier/cuda-oxide-src -- an
+#                               absolute path into another developer's home, so
+#                               it could not build anywhere else. Cargo reads
+#                               path deps eagerly even when no feature selects
+#                               them, so that broke `cargo metadata` for the
+#                               whole graph, not just --features cuda-oxide.
+#                               Fixed upstream in haixuanTao/khal#5 (now a
+#                               pinned git rev). The rewrite below is kept only
+#                               for local checkouts predating that fix.
 #   LuisaRender   source        NOT AUTOMATED. Genesis ships zero LuisaRender
 #                               files; enabling gs.renderers.RayTracer means
 #                               compiling ext/LuisaRender (CMake/xmake + CUDA).
@@ -118,12 +123,13 @@ if [[ $NEXUS_SRC -eq 1 ]]; then
   clone_at vortx      rebase/nexus-0.4
   clone_at cuda-oxide main
 
-  # khal pins cuda-device at /home/xavier/cuda-oxide-src -- unbuildable off that
-  # machine. Repoint at the clone above. Idempotent: only rewrites the absolute path.
+  # Legacy safety net: khal-std once pinned cuda-device at an absolute
+  # /home/xavier path (fixed in haixuanTao/khal#5, now a pinned git rev, so a
+  # fresh clone needs nothing here). Only rewrites a stale local checkout.
   khal_std="$RT/khal/crates/khal-std/Cargo.toml"
-  if grep -q '/home/xavier/cuda-oxide-src' "$khal_std"; then
+  if grep -q 'path = "/home/xavier/cuda-oxide-src' "$khal_std"; then
     sed -i 's|path = "/home/xavier/cuda-oxide-src/crates/cuda-device"|path = "../../../cuda-oxide/crates/cuda-device"|' "$khal_std"
-    echo "  patched khal-std: cuda-device -> ../../../cuda-oxide (was /home/xavier/...)"
+    echo "  NOTE: stale khal checkout predating khal#5 -- repointed cuda-device locally"
   fi
 
   uv pip install --python "$BENCH_VENV/bin/python" maturin
