@@ -22,7 +22,11 @@ dependencies = [
 
 [project.optional-dependencies]
 mujoco = ["mujoco>=3.0"]
-mjlab = ["mjlab"]                     # requires NVIDIA GPU + CUDA (MuJoCo-Warp); where LeRobot legged trains
+# scipy is imported by mjlab but missing from its metadata, so [mjlab] alone
+# fails at import. NOTE: mjlab 1.3.0 is currently unusable regardless -- it
+# requires mujoco-warp>=3.7.0.1 with no upper bound, and reads wp.context, which
+# warp-lang >=1.14 removed. See tools/bootstrap_backends.sh.
+mjlab = ["mjlab", "scipy"]            # requires NVIDIA GPU + CUDA (MuJoCo-Warp); where LeRobot legged trains
 genesis = ["genesis-world>=0.2"]      # requires NVIDIA GPU + CUDA at runtime
 nexus = ["dimforge-nexus3d"]          # dimforge's GPU (WebGPU) engine; requires a GPU at runtime
 isaac = []                            # Isaac Lab is installed out-of-band (NVIDIA stack); see README
