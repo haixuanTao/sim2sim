@@ -26,6 +26,9 @@ W, H = 480, 368  # match the genesis/isaac native-RT demos
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--frames", type=int, default=N_FRAMES,
+                    help="frames to render (default %(default)s). Raise it for resource "
+                         "profiling; the default loop is too short to sample GPU utilisation.")
     ap.add_argument("--no-capture", action="store_true",
                     help="skip the frame readback (and the MP4): benchmark the sim+trace loop with frames staying on the GPU")
     args = ap.parse_args()
@@ -94,7 +97,7 @@ def main() -> None:
     t_phys = t_sync = t_render = t_read = 0.0
     n_loops = 0
     t_loop = time.perf_counter()
-    while (n_loops if args.no_capture else len(frames)) < N_FRAMES:
+    while (n_loops if args.no_capture else len(frames)) < args.frames:
         t = time.perf_counter()
         pipeline.simulate(viewer, state, ts)
         # State read blocks until the async GPU solver finishes — bills physics
@@ -123,7 +126,7 @@ def main() -> None:
         n_loops += 1
     if not args.no_capture:
         frame = viewer.snap_rgb_flush()
-        if frame is not None and len(frames) < N_FRAMES:
+        if frame is not None and len(frames) < args.frames:
             frames.append(frame)
     rend_s = time.perf_counter() - t_loop
 

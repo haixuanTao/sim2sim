@@ -32,6 +32,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-capture", action="store_true",
                     help="skip the GPU->CPU frame copy (and the MP4): frames stay CUDA-resident")
+    ap.add_argument("--frames", type=int, default=int(DURATION_S * FPS),
+                    help="frames to render (default %(default)s = DURATION_S*FPS). Raise it for "
+                         "resource profiling: at ~300 fps the default loop lasts <1s, which is "
+                         "too short for nvidia-smi to resolve GPU utilisation.")
     ap.add_argument("--res", default=f"{W}x{H}", metavar="WxH",
                     help="render resolution (default %(default)s — matches the other native-RT "
                          "rows, so the benchmark row stays comparable; raise it only for a "
@@ -60,7 +64,7 @@ def main() -> None:
         spp=SPP, denoise=True, lights=LIGHTS))
     scene.build()
 
-    n_frames = int(DURATION_S * FPS)
+    n_frames = args.frames
     spf = max(1, round((1.0 / FPS) / DT))
 
     for _ in range(5):  # kernel JIT + first-render allocations

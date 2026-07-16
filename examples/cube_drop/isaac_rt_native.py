@@ -96,9 +96,21 @@ def main() -> None:
         eye=[3.2, -3.2, 2.2], target=[0.0, 0.0, 0.35], camera_prim_path="/World/cam"
     )
 
-    # warm up renderer / fill sensor pipeline
-    for _ in range(8):
+    # Warm up renderer / fill sensor pipeline. A fixed tick count is not enough:
+    # with /rtx/pathtracing/totalSpp = SPP the sensor yields nothing until an
+    # accumulation completes, and on a cold RTX shader cache that takes far
+    # longer -- get_rgba() returns a 0-d array until then, which used to blow up
+    # as "IndexError: too many indices" on the first frame. Wait for a real
+    # frame instead. This is outside the timers, so it cannot affect the numbers.
+    for tick in range(1, 201):
         world.render()
+        if np.asarray(cam.get_rgba()).ndim == 3:
+            break
+    else:
+        raise RuntimeError(
+            "Isaac camera never produced a frame in 200 render ticks — the RTX "
+            "shader cache may still be compiling (first launch takes ~2 min)."
+        )
 
     spf = max(1, round(FRAME_DT / dt))
     phys_s = rend_s = 0.0

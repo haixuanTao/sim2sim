@@ -208,6 +208,45 @@ def res_sweep_section() -> str:
     )
 
 
+def resource_section() -> str:
+    """What each engine costs to run, not just how fast it goes.
+
+    Only the three engines that could be rebuilt and run on this box appear:
+    LuisaRender is not built and mjlab does not import (see
+    tools/bootstrap_backends.sh), so they are absent rather than estimated.
+    """
+    prof = [r for r in DATA.get("resource_profile", []) if not r.get("error")]
+    if not prof:
+        return ""
+    body = "".join(
+        f"<tr><td>{r['label']}</td>"
+        f"<td>{r['ram_peak_mb']:,.0f}</td><td>{r['vram_peak_mb']:,.0f}</td>"
+        f"<td>{r['cpu_mean_pct']:.0f}%</td><td>{r['gpu_mean_pct']:.0f}%</td>"
+        f"<td class='sub'>{r['wall_s']:.0f} s</td></tr>"
+        for r in sorted(prof, key=lambda r: r["vram_peak_mb"])
+    )
+    return (
+        "<h2 class='scene'>Resource usage — cube scene, 480×368 @ 64 spp</h2>"
+        "<p class='sub'>The fps rows say how fast each engine is; they say nothing about what it "
+        "costs to run. The three engines here are the ones that could actually be rebuilt and run "
+        "on this machine — LuisaRender is not built and mjlab does not import, so they are absent "
+        "rather than estimated. The picture is a set of trades, not a ranking: "
+        "<strong>Genesis uses ~3.7× Nexus's host RAM but a third of its VRAM</strong>; "
+        "<strong>Isaac costs ~12× Nexus's RAM</strong> (5.8 GB — the Kit runtime and USD stage) "
+        "and works the GPU hardest (79%) while path-tracing slowest. VRAM is the constraint that "
+        "decides how many instances fit on a card: at 3.4 GB Nexus fits ~9 on this 32 GB GPU, "
+        "Genesis ~30.</p>"
+        "<p class='sub'>Method: RAM is USS summed over the process tree (not RSS, which "
+        "double-counts shared pages); VRAM is per-PID from nvidia-smi's compute-apps table; GPU "
+        "util is device-wide and only sampled with the GPU otherwise idle. Peaks include one-time "
+        "JIT / shader-cache / stage-load costs, deliberately — peak footprint is what sizes a "
+        "machine. Reproduce with <code>tools/resource_profile.py</code>.</p>"
+        "<div class='tablewrap'><table><thead><tr><th>Backend</th><th>RAM peak (MB)</th>"
+        "<th>VRAM peak (MB)</th><th>CPU mean</th><th>GPU mean</th><th>Run</th>"
+        f"</tr></thead><tbody>{body}</tbody></table></div>"
+    )
+
+
 def split_section() -> str:
     """Physics and render costs, separated.
 
@@ -558,6 +597,7 @@ def _panel(mach: dict) -> str:
         "<th>Physics steps/s</th><th>Resolution</th><th>spp</th><th>GPU</th><th>Source</th></tr></thead>\n"
         f"<tbody>\n{table_rows()}\n</tbody>\n</table></div></details>"
     )
+    parts.append(resource_section())
     parts.append(split_section())
     parts.append(res_sweep_section())
     parts.append(light_parity_section())

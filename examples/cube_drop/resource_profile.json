@@ -1,0 +1,50 @@
+[
+  {
+    "backend": "genesis_nyx",
+    "label": "Genesis (Nyx)",
+    "exit": 0,
+    "wall_s": 17.4,
+    "samples": 68,
+    "ram_peak_mb": 1776.4,
+    "ram_mean_mb": 1565.3,
+    "vram_peak_mb": 1046,
+    "vram_mean_mb": 886.1,
+    "cpu_peak_pct": 735.5,
+    "cpu_mean_pct": 79.1,
+    "gpu_peak_pct": 65,
+    "gpu_mean_pct": 50.2,
+    "fps_line": "[fps-nocapture] genesis-nyx: 4000 frames in 12.65s = 316.2 gen-fps"
+  },
+  {
+    "backend": "nexus",
+    "label": "Nexus",
+    "exit": 0,
+    "wall_s": 26.3,
+    "samples": 110,
+    "ram_peak_mb": 483.6,
+    "ram_mean_mb": 460.0,
+    "vram_peak_mb": 3355,
+    "vram_mean_mb": 3263.8,
+    "cpu_peak_pct": 793.2,
+    "cpu_mean_pct": 52.3,
+    "gpu_peak_pct": 61,
+    "gpu_mean_pct": 59.3,
+    "fps_line": "[fps-nocapture] nexus-rt-native: 4000 frames in 25.58s = 156.4 gen-fps"
+  },
+  {
+    "backend": "isaac",
+    "label": "Isaac Sim",
+    "exit": 0,
+    "wall_s": 26.8,
+    "samples": 97,
+    "ram_peak_mb": 5821.7,
+    "ram_mean_mb": 4995.4,
+    "vram_peak_mb": 2842,
+    "vram_mean_mb": 2266.4,
+    "cpu_peak_pct": 792.2,
+    "cpu_mean_pct": 105.7,
+    "gpu_peak_pct": 100,
+    "gpu_mean_pct": 79.1,
+    "fps_line": ""
+  }
+]
