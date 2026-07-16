@@ -57,6 +57,19 @@ SCENES = {
         ["lerobot_batch"],
     "Startup — time to first physics step (LeRobot scene, single env)": ["boot"],
 }
+# How each native-RT row lights its scene, read off the scripts that produce
+# them. They disagree, which is why the rt_native column is indicative rather
+# than exact -- see light_parity_section().
+LIGHT_SETUPS = [
+    ("genesis", "lights=[radius 1.5] + env_surface=Emission",
+     "soft shadows + emissive env — genesis_rt_native.py"),
+    ("genesis_nyx", "lights=[radius 1.5]",
+     "soft shadows; matched to the LuisaRender row — genesis_nyx_native.py"),
+    ("isaac", "UsdLux.DomeLight + UsdLux.DistantLight",
+     "dome env sampling; its row note attributes ~73 ms/frame to the rebuild — isaac_rt_native.py"),
+    ("nexus", "add_directional_light()",
+     "hard shadows, cheapest of the three — nexus_rt_native.py"),
+]
 BACKEND_LABEL = {
     "mujoco": "MuJoCo", "mjlab": "mjlab (MuJoCo-Warp)",
     "genesis": "Genesis", "genesis_nyx": "Genesis (Nyx)", "nexus": "Nexus",
@@ -192,6 +205,61 @@ def res_sweep_section() -> str:
         "<div class='tablewrap'><table><thead><tr><th>Resolution</th><th>Pixels</th>"
         "<th>Render ms/frame</th><th>Render fps</th><th>ns/sample</th><th></th></tr></thead>"
         f"<tbody>{rows}</tbody></table></div>"
+    )
+
+
+def light_parity_section() -> str:
+    """Scene-parity caveat for the native-RT rows + what the disagreement costs.
+
+    The rt_native rows do not light the same scene (see LIGHT_SETUPS). That makes
+    the column indicative, not exact. LuisaRender/Isaac/Nexus cannot be
+    re-measured on this box, so tools/nyx_light_sweep.py puts a number on the
+    effect using the one RT engine that does run here.
+    """
+    sweep = DATA.get("nyx_light_sweep")
+    if not sweep:
+        return ""
+    setups = "".join(
+        f"<tr><td>{BACKEND_LABEL.get(b, b)}</td><td><code>{s}</code></td><td class='sub'>{n}</td></tr>"
+        for b, s, n in LIGHT_SETUPS
+    )
+    by_res: dict[str, list] = {}
+    for s in sweep:
+        by_res.setdefault(s["resolution"], []).append(s)
+    tables = ""
+    for res, group in by_res.items():
+        base = next((g["render_ms"] for g in group if g["regime"] == "unlit"), None)
+
+        def _delta(ms: float) -> str:
+            if not base or ms == base:
+                return "—"
+            return f"{100 * (ms - base) / base:+.0f}% vs unlit"
+
+        rows = "".join(
+            f"<tr><td>{g['regime']}</td><td>{g['render_ms']:.2f}</td>"
+            f"<td>{fmt(g['render_fps'])}</td>"
+            f"<td class='sub'>{_delta(g['render_ms'])}</td></tr>"
+            for g in group
+        )
+        tables += (
+            f"<h3>{res} @ 64 spp</h3><div class='tablewrap'><table><thead><tr>"
+            "<th>Lighting</th><th>Render ms/frame</th><th>Render fps</th><th></th>"
+            f"</tr></thead><tbody>{rows}</tbody></table></div>"
+        )
+    return (
+        "<h2 class='scene'>Scene parity across the ray-traced rows</h2>"
+        "<p class='sub'>The native-RT rows above <strong>do not light the same scene</strong>, so "
+        "read that column as indicative rather than exact:</p>"
+        "<div class='tablewrap'><table><thead><tr><th>Row</th><th>Light setup</th><th></th>"
+        f"</tr></thead><tbody>{setups}</tbody></table></div>"
+        "<p class='sub'>How much is the disagreement worth? LuisaRender, Isaac and Nexus cannot be "
+        "re-measured on this machine (no from-source LuisaRender build, no isaac-venv, no nexus3d "
+        "installed), so <code>tools/nyx_light_sweep.py</code> sweeps the regimes on Nyx instead. "
+        "The answer: <strong>~10% at a tracing-bound resolution, inside the noise at the row's "
+        "480×368</strong> — and soft vs hard shadows costs nothing measurable. So lighting choice "
+        "does not explain cross-engine gaps of 24×/58×. Isaac is the exception its own row note "
+        "already records: its dome light costs ~73 ms/frame of env-sampling rebuild.</p>"
+        f"{tables}"
     )
 
 
@@ -440,6 +508,7 @@ def _panel(mach: dict) -> str:
         f"<tbody>\n{table_rows()}\n</tbody>\n</table></div></details>"
     )
     parts.append(res_sweep_section())
+    parts.append(light_parity_section())
     vids = video_cards()
     if "<figure" in vids:
         parts.append(f"<h3>Videos</h3>\n{vids}")

@@ -468,6 +468,78 @@
           "render_fps": 90.9,
           "ns_per_sample": 0.035
         }
+      ],
+      "nyx_light_sweep": [
+        {
+          "resolution": "480x368",
+          "regime": "unlit",
+          "spp": 64,
+          "render_ms": 1.74,
+          "render_fps": 575.1
+        },
+        {
+          "resolution": "480x368",
+          "regime": "point (radius 0, hard shadow)",
+          "spp": 64,
+          "render_ms": 2.08,
+          "render_fps": 480.7
+        },
+        {
+          "resolution": "480x368",
+          "regime": "area (radius 1.5, soft shadow)",
+          "spp": 64,
+          "render_ms": 1.94,
+          "render_fps": 515.6
+        },
+        {
+          "resolution": "480x368",
+          "regime": "area (radius 4.0, very soft)",
+          "spp": 64,
+          "render_ms": 2.11,
+          "render_fps": 473.8
+        },
+        {
+          "resolution": "480x368",
+          "regime": "3 area lights (radius 1.5)",
+          "spp": 64,
+          "render_ms": 2.1,
+          "render_fps": 477.3
+        },
+        {
+          "resolution": "1920x1440",
+          "regime": "unlit",
+          "spp": 64,
+          "render_ms": 6.25,
+          "render_fps": 159.9
+        },
+        {
+          "resolution": "1920x1440",
+          "regime": "point (radius 0, hard shadow)",
+          "spp": 64,
+          "render_ms": 6.79,
+          "render_fps": 147.4
+        },
+        {
+          "resolution": "1920x1440",
+          "regime": "area (radius 1.5, soft shadow)",
+          "spp": 64,
+          "render_ms": 6.72,
+          "render_fps": 148.8
+        },
+        {
+          "resolution": "1920x1440",
+          "regime": "area (radius 4.0, very soft)",
+          "spp": 64,
+          "render_ms": 6.23,
+          "render_fps": 160.6
+        },
+        {
+          "resolution": "1920x1440",
+          "regime": "3 area lights (radius 1.5)",
+          "spp": 64,
+          "render_ms": 7.11,
+          "render_fps": 140.7
+        }
       ]
     },
     {
