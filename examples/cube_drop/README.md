@@ -80,6 +80,36 @@ setup (model load / GPU pipeline compile).
   fall) and fixed in the `fix/initial-velocities-from-rapier` branch; rotation
   now integrates at exactly |ω|·dt.
 
+## Measurement tooling (per-machine)
+
+[`tools/`](tools/) holds the drivers used on the RTX 5090 desktop — adapt the
+machine id/paths for a new box (`benchmark_results.json` is multi-machine;
+**never** run `benchmark.py --run all` against it, that writes the
+single-machine format and clobbers the other panels):
+
+- `remeasure_5090.py` — re-measures the nexus rows of one panel (capture +
+  no-capture variants, segments); refuses to run unless `nvidia-smi` shows an
+  idle GPU (co-tenant contamination once silently halved a whole sweep).
+- `fill_nocapture_5090.py` — fills missing `--no-capture` numbers.
+- `run_batch2k.sh` — the Scene-3 batch-physics sweep across all engines.
+
+### Genesis-Nyx (the new Genesis ray tracer)
+
+`genesis_nyx_native.py` (cube) and `../lerobot_legs/genesis_nyx_render.py`
+(LeRobot) render via [genesis-nyx](https://github.com/Genesis-Embodied-AI/genesis-nyx)
+instead of the legacy from-source LuisaRender path. Setup (CUDA 12.9+ driver,
+Python 3.12):
+
+```bash
+uv venv nyx-venv --python 3.12
+uv pip install --python nyx-venv/bin/python torch --torch-backend=cu128
+uv pip install --python nyx-venv/bin/python     "git+https://github.com/Genesis-Embodied-AI/Genesis.git" gs-nyx-plugin     pillow imageio imageio-ffmpeg
+```
+
+Two gotchas: the released `genesis-world` 1.2.2 lacks the API Nyx needs
+(install Genesis from git as above), and the plugin must be imported **after**
+`gs.init()` (its module body references `gs.qd_float`).
+
 ## Batch physics — 2,048 parallel envs
 
 [`../lerobot_legs/batch_bench.py`](../lerobot_legs/batch_bench.py) steps the
