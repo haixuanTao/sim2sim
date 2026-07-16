@@ -403,6 +403,26 @@
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
           "pipeline": "Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main, torch cu128), CUDA-resident uint8 output. ~24x the from-source LuisaRender rt_native row at identical 480x368/64 spp on this box \u2014 that row's NVRTC sm_120 PTX fallback likely understates it, so treat 24x as an upper bound. Scene defines no light/env map (the plugin warns), so tracing is cheaper than a lit scene.",
           "video": "cube_rt_genesis_nyx.mp4"
+        },
+        {
+          "backend": "genesis_nyx",
+          "mode": "lerobot_rt",
+          "fps": 128.4,
+          "fps_nocapture": 133.4,
+          "ms_per_frame": 8,
+          "resolution": "640x480",
+          "spp": 32,
+          "physics_steps_s": 2265,
+          "segments": {
+            "physics": 3.09,
+            "sync": 0.0,
+            "render": 4.4,
+            "readback": 0.32
+          },
+          "segments_source": "measured 2026-07-16",
+          "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
+          "pipeline": "Genesis GPU physics (per-DOF PD stance hold, same scene as genesis_render.py) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp \u2014 that row's NVRTC sm_120 PTX fallback likely understates it, so treat 58x as an upper bound. Unlike Isaac's RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static.",
+          "video": "../lerobot_legs/lerobot_genesis_nyx.mp4"
         }
       ]
     },
