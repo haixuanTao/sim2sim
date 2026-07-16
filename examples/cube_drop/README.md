@@ -173,7 +173,7 @@ installed; Genesis's RT backend isn't built).
 real-time ray-traced lighting *and* a full path-traced mode, driven per
 camera/render-product. It's the one engine where ray tracing is the *default*
 path, not an add-on. It's installed here via the pip `isaacsim` package in a
-dedicated Python 3.10 venv (`~/rt_build/isaac-venv`); headless `PathTracing`
+dedicated venv (`~/rt_build/isaac-venv`); headless `PathTracing`
 mode verified working (`/rtx/rendermode = PathTracing`). Note the **first**
 launch compiles the RTX shader cache (~2 min and can look hung/crashy);
 subsequent launches start in seconds.
@@ -222,7 +222,8 @@ python examples/cube_drop/rt_record.py --sim mujoco --out traj_mujoco.npz
 python examples/cube_drop/rt_render.py --traj traj_mujoco.npz \
     --out cube_rt_mujoco.mp4 --label mujoco   # needs: mitsuba imageio imageio-ffmpeg
 
-# Isaac runs in its own venv (pip isaacsim needs Python 3.10):
+# Isaac runs in its own venv (see the Isaac install notes below — it is NOT
+# Python 3.10, and `isaacsim[all]` alone will not start):
 ~/rt_build/isaac-venv/bin/python examples/cube_drop/rt_record.py --sim isaac --out traj_isaac.npz
 ```
 
@@ -294,6 +295,66 @@ genesis/isaac native demos, via `NexusViewer(width, height)`):
 .venv/bin/python examples/cube_drop/nexus_rt_native.py   # → cube_rt_nexus_native.mp4
 .venv/bin/python examples/cube_drop/nexus_rt_bench.py    # → nexus_rt_bench.json
 ```
+
+### Installing Isaac Sim (the pip route, corrected)
+
+Rebuilt from scratch on 2026-07-16 against `isaacsim` 6.0.1.0; the older
+"Python 3.10" note above was wrong on every count. What actually works:
+
+```bash
+uv venv ~/rt_build/isaac-venv --python 3.12     # 6.0.1.0 ships cp312 wheels ONLY
+uv pip install --python ~/rt_build/isaac-venv/bin/python \
+    "isaacsim[all,extscache]==6.0.1.0" \
+    --extra-index-url https://pypi.nvidia.com \
+    --index-strategy unsafe-best-match \
+    --prerelease=allow
+OMNI_KIT_ACCEPT_EULA=YES ~/rt_build/isaac-venv/bin/python ...
+```
+
+Four separate traps, each of which fails differently:
+
+- **Python 3.12, not 3.10.** 6.0.1.0 publishes `cp312` wheels only; a 3.10 venv
+  cannot resolve `isaacsim` at all.
+- **`[all]` is not enough — you need `[all,extscache]`.** `extscache` is a
+  *separate* extra (`isaacsim-extscache-kit`, `-kit-sdk`, `-physics`), and
+  those carry the Kit extensions. Without them the install looks complete, then
+  Kit dies at startup with `Failed to resolve extension dependencies ... No
+  versions of isaacsim.anim.robot.schema`, exit 55. Nothing points at the
+  missing extra.
+- **`--index-strategy unsafe-best-match`** — the wheels straddle pypi.nvidia.com
+  and PyPI, and uv otherwise refuses to look past the first index that has the
+  name.
+- **`--prerelease=allow`** — a transitive pin (`tinyobjloader==2.0.0rc13`) is a
+  pre-release.
+
+`OMNI_KIT_ACCEPT_EULA=YES` accepts NVIDIA's licence non-interactively; the app
+blocks on a prompt otherwise, which looks like a hang under a profiler.
+
+## Resource usage — RAM / VRAM / CPU / GPU
+
+The fps rows say how fast each engine is, not what it costs to run.
+[`tools/resource_profile.py`](tools/resource_profile.py) samples each backend's
+cube demo and reports peak host RAM, peak VRAM, and mean CPU/GPU utilisation.
+Results feed the "Resource usage" section of the results page.
+
+```bash
+~/rt_build/nyx-venv/bin/python examples/cube_drop/tools/resource_profile.py --backend all
+```
+
+Read the numbers with the method in mind:
+
+- **RAM is USS** (unique set size) summed over the process tree, not RSS — RSS
+  double-counts pages shared between parent and children.
+- **VRAM is per-PID** from nvidia-smi's compute-apps table, so a co-tenant's
+  allocation is never misattributed.
+- **GPU utilisation is device-wide** (nvidia-smi cannot attribute it per process
+  without MIG), so the tool refuses to sample unless the GPU is otherwise idle.
+- **The loop must be long enough to see.** At the default 150 frames the render
+  loop is <1 s inside a multi-second process, and utilisation reads ~0% — pure
+  sampling artifact. The profiler passes `--frames 4000`; that flag exists for
+  this reason and does not change fps.
+- Peaks include one-time costs (JIT, shader/kernel compile, USD stage load),
+  deliberately: peak footprint is what sizes a machine.
 
 ## Running
 
