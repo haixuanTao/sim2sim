@@ -27,6 +27,10 @@ FPS = 30
 W, H = 640, 480
 SPP = 32  # matches the other LeRobot RT rows
 DT = 0.005
+# Same area light as genesis_rt_render.py's RayTracer(lights=...): a radius, so
+# it casts a soft shadow rather than a hard one.
+LIGHTS = [{"pos": (2.0, -1.0, 6.0), "color": (1.0, 1.0, 1.0),
+           "intensity": 12.0, "radius": 1.5}]
 
 ROBOT_XML = (
     Path.home()
@@ -53,11 +57,15 @@ def main() -> None:
     from gs_nyx_plugin.nyx_camera_options import NyxCameraOptions
 
     scene = gs.Scene(sim_options=gs.options.SimOptions(dt=DT), show_viewer=False)
-    scene.add_entity(gs.morphs.Plane())
+    # Surface + light mirror genesis_rt_render.py's LuisaRender scene, so the two
+    # lerobot_rt rows are the same render, not just the same geometry. Without
+    # LIGHTS the sensor warns and every camera ray terminates on a constant
+    # ambient env: no shadow rays, no GI -- a path trace of nothing.
+    scene.add_entity(gs.morphs.Plane(), surface=gs.surfaces.Rough(color=(0.65, 0.65, 0.65)))
     robot = scene.add_entity(gs.morphs.MJCF(file=str(ROBOT_XML), pos=(0.0, 0.0, 0.72)))
     cam = scene.add_sensor(NyxCameraOptions(
         res=(W, H), pos=(1.3, -1.3, 0.85), lookat=(0.0, 0.0, 0.4),
-        spp=SPP, denoise=True))
+        spp=SPP, denoise=True, lights=LIGHTS))
     scene.build()
 
     dofs, kps, kvs, targets = [], [], [], []

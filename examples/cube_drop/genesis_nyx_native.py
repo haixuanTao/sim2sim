@@ -22,6 +22,10 @@ FPS = 30
 W, H = 480, 368  # match the other native-RT cube rows
 SPP = 64
 DT = 1.0 / 120.0
+# Same area light as genesis_rt_native.py's RayTracer(lights=...): a radius, so
+# it casts a soft shadow rather than a hard one.
+LIGHTS = [{"pos": (2.0, -1.0, 6.0), "color": (1.0, 1.0, 1.0),
+           "intensity": 12.0, "radius": 1.5}]
 
 
 def main() -> None:
@@ -37,13 +41,18 @@ def main() -> None:
     from gs_nyx_plugin.nyx_camera_options import NyxCameraOptions
 
     scene = gs.Scene(sim_options=gs.options.SimOptions(dt=DT), show_viewer=False)
-    scene.add_entity(gs.morphs.Plane())
+    # Surfaces + light mirror genesis_rt_native.py's LuisaRender scene, so the
+    # two rt_native rows are the same render, not just the same geometry. Without
+    # LIGHTS the sensor warns and every camera ray terminates on a constant
+    # ambient env: no shadow rays, no GI -- a path trace of nothing.
+    scene.add_entity(gs.morphs.Plane(), surface=gs.surfaces.Rough(color=(0.65, 0.65, 0.65)))
     scene.add_entity(
-        gs.morphs.Box(size=(0.3, 0.3, 0.3), pos=(0.0, 0.0, 1.5), euler=(12.0, 22.0, 5.0))
+        gs.morphs.Box(size=(0.3, 0.3, 0.3), pos=(0.0, 0.0, 1.5), euler=(12.0, 22.0, 5.0)),
+        surface=gs.surfaces.Rough(color=(0.8, 0.25, 0.2)),
     )
     cam = scene.add_sensor(NyxCameraOptions(
         res=(W, H), pos=(2.8, -2.8, 2.0), lookat=(0.0, 0.0, 0.4),
-        spp=SPP, denoise=True))
+        spp=SPP, denoise=True, lights=LIGHTS))
     scene.build()
 
     n_frames = int(DURATION_S * FPS)

@@ -182,10 +182,10 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Genesis (Nyx): 3.21 ms/frame = 312 fps (480x368 @ 64 spp) — physics 1.16 ms (36%), render 2.04 ms (64%) — Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main, torch cu128), CUDA-resident uint8 output. ~24x the from-source LuisaRender rt_native row at identical 480x368/64 spp on this box — that row&#x27;s NVRTC sm_120 PTX fallback likely understates it, so treat 24x as an upper bound. Scene defines no light/env map (the plugin warns), so tracing is cheaper than a lit scene.">
+<div class="bar-row" tabindex="0" title="Genesis (Nyx): 3.12 ms/frame = 320 fps (480x368 @ 64 spp) — physics 1.11 ms (36%), render 2.01 ms (64%) — Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py&#x27;s LuisaRender setup — same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) — so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row&#x27;s NVRTC sm_120 PTX fallback likely understates it.">
   <span class="bar-label">Genesis (Nyx)<span class="sub"> 480x368 @ 64 spp</span></span>
-  <span class="bar-track"><span class="bar seg-physics" style="width:0.56%"></span><span class="bar seg-render" style="width:0.98%"></span></span>
-  <span class="bar-val">3.21 ms <span class="sub">312 fps</span></span>
+  <span class="bar-track"><span class="bar seg-physics" style="width:0.53%"></span><span class="bar seg-render" style="width:0.96%"></span></span>
+  <span class="bar-val">3.12 ms <span class="sub">320 fps</span></span>
 </div>
 <div class="bar-row" tabindex="0" title="Nexus: 5.20 ms/frame = 192 fps (480x368 @ 64 spp) — physics 2.88 ms (55%), sync (gpu→host) 0.07 ms (1%), render 2.25 ms (43%) — kiss3d 0.45 wgpu path tracer, headless + transform-only TLAS fast path (per-frame BLAS re-bake eliminated — vs laptop&#x27;s 242 ms/frame)">
   <span class="bar-label">Nexus<span class="sub"> 480x368 @ 64 spp</span></span>
@@ -229,10 +229,10 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Genesis (Nyx): 7.50 ms/frame = 133 fps (640x480 @ 32 spp) — physics 3.09 ms (41%), render 4.40 ms (59%) — Genesis GPU physics (per-DOF PD stance hold, same scene as genesis_render.py) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp — that row&#x27;s NVRTC sm_120 PTX fallback likely understates it, so treat 58x as an upper bound. Unlike Isaac&#x27;s RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static.">
+<div class="bar-row" tabindex="0" title="Genesis (Nyx): 7.60 ms/frame = 132 fps (640x480 @ 32 spp) — physics 3.16 ms (42%), render 4.44 ms (58%) — Genesis GPU physics (per-DOF PD stance hold) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main). Scene mirrors genesis_rt_render.py&#x27;s LuisaRender setup — same Rough plane and same area light (intensity 12, radius 1.5, soft contact shadows under the feet). ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp; lighting cost ~0%, so the gap is not a lit-vs-unlit artifact. Unlike Isaac&#x27;s RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static. Upper bound: the LuisaRender row&#x27;s NVRTC sm_120 PTX fallback likely understates it.">
   <span class="bar-label">Genesis (Nyx)<span class="sub"> 640x480 @ 32 spp</span></span>
-  <span class="bar-track"><span class="bar seg-physics" style="width:0.67%"></span><span class="bar seg-render" style="width:0.96%"></span></span>
-  <span class="bar-val">7.50 ms <span class="sub">133 fps</span></span>
+  <span class="bar-track"><span class="bar seg-physics" style="width:0.69%"></span><span class="bar seg-render" style="width:0.97%"></span></span>
+  <span class="bar-val">7.60 ms <span class="sub">132 fps</span></span>
 </div>
 <div class="bar-row" tabindex="0" title="Isaac Sim: 23 ms/frame = 43.4 fps (640x480 @ 32 spp) — no per-segment breakdown — PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing — Isaac Sim 6.0.1.0; URDF import ported to 6.0&#x27;s convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames — see the cube RT row for what per-frame motion costs this renderer.">
   <span class="bar-label">Isaac Sim<span class="sub"> 640x480 @ 32 spp</span></span>
@@ -346,7 +346,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>MuJoCo</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>424,773</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
 <tr><td>mjlab (MuJoCo-Warp)</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>6,549</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
 <tr><td>Genesis</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>3,560</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
-<tr><td>Genesis (Nyx)</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>312</td><td>3.21</td><td>1.16 / — / 2.04</td><td>3,448</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
+<tr><td>Genesis (Nyx)</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>320</td><td>3.12</td><td>1.11 / — / 2.01</td><td>3,419</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
 <tr><td>Nexus</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>192</td><td>5.20</td><td>2.88 / 0.07 / 2.25</td><td>—</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Genesis</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>12.1 †</td><td>82</td><td>—</td><td>2,283</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Isaac Sim</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>4.8 †</td><td>209</td><td>—</td><td>1,099</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)</td></tr>
@@ -354,7 +354,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>Genesis</td><td>LeRobot legs — Rasterized (native renderer)</td><td>128</td><td>7.78</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (real STL robot, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Rasterized (native renderer)</td><td>40.0</td><td>25</td><td>24 / 0.02 / 1.27</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus</td><td>LeRobot legs — Rasterized (native renderer)</td><td>32.8</td><td>30</td><td>25 / 2.91 / 2.21</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
-<tr><td>Genesis (Nyx)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>133</td><td>7.50</td><td>3.09 / — / 4.40</td><td>2,265</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
+<tr><td>Genesis (Nyx)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>132</td><td>7.60</td><td>3.16 / — / 4.44</td><td>2,251</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
 <tr><td>Isaac Sim</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>43.4 †</td><td>23</td><td>—</td><td>1,469</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>41.2</td><td>24</td><td>24 / 0.02 / 0.30</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Nexus</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>35.4</td><td>28</td><td>25 / 0.67 / 2.92</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
@@ -379,7 +379,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <h3>Ray traced — engine's own path tracer</h3><div class='gallery'>
 <figure>
   <video src="../cube_rt_genesis_nyx.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>312 fps</span>
+  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>320 fps</span>
   <span class="sub">480x368 @ 64 spp</span></figcaption>
 </figure>
 </div>
@@ -388,7 +388,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <h3>Ray traced — engine's own path tracer</h3><div class='gallery'>
 <figure>
   <video src="../../lerobot_legs/lerobot_genesis_nyx.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>133 fps</span>
+  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>132 fps</span>
   <span class="sub">640x480 @ 32 spp</span></figcaption>
 </figure>
 </div>
