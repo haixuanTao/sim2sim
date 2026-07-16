@@ -141,32 +141,32 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
-<div class="bar-row" tabindex="0" title="MuJoCo: 0.12 ms/frame = 8,643 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="MuJoCo: 0.12 ms/frame = 8,643 fps (640x480) — no per-segment breakdown — CPU physics + EGL render">
   <span class="bar-label">MuJoCo<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:0.4%"></span></span>
   <span class="bar-val">0.12 ms <span class="sub">8,643 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="mjlab (MuJoCo-Warp): 1.30 ms/frame = 768 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="mjlab (MuJoCo-Warp): 1.30 ms/frame = 768 fps (640x480) — no per-segment breakdown — GPU (MuJoCo-Warp) + host EGL render">
   <span class="bar-label">mjlab (MuJoCo-Warp)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:3.4%"></span></span>
   <span class="bar-val">1.30 ms <span class="sub">768 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 1.89 ms/frame = 529 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 1.89 ms/frame = 529 fps (640x480) — no per-segment breakdown — GPU physics + render (warmed up)">
   <span class="bar-label">Genesis<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:4.9%"></span></span>
   <span class="bar-val">1.89 ms <span class="sub">529 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 2.04 ms/frame = 489 fps (640x480) — physics 1.92 ms (94%), sync (gpu→host) 0.01 ms (0%), render 0.11 ms (5%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 2.04 ms/frame = 489 fps (640x480) — physics 1.92 ms (94%), sync (gpu→host) 0.01 ms (0%), render 0.11 ms (5%) — native CUDA + CUDA-graph replay (one cuGraphLaunch per frame; khal feat/cuda-graph-capture-fixes)">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:4.96%"></span><span class="bar seg-sync" style="width:0.03%"></span><span class="bar seg-render" style="width:0.29%"></span></span>
   <span class="bar-val">2.04 ms <span class="sub">489 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 3.09 ms/frame = 324 fps (640x480) — physics 2.93 ms (95%), sync (gpu→host) 0.03 ms (1%), render 0.13 ms (4%)">
+<div class="bar-row" tabindex="0" title="Nexus: 3.09 ms/frame = 324 fps (640x480) — physics 2.93 ms (95%), sync (gpu→host) 0.03 ms (1%), render 0.13 ms (4%) — WebGPU physics + headless offscreen render + snap_rgb readback (haixuanTao kiss3d: 18x read_pixels fix)">
   <span class="bar-label">Nexus<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:7.55%"></span><span class="bar seg-sync" style="width:0.08%"></span><span class="bar seg-render" style="width:0.34%"></span></span>
   <span class="bar-val">3.09 ms <span class="sub">324 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide): 39 ms/frame = 25.8 fps (640x480) — physics 39 ms (100%), sync (gpu→host) 0.02 ms (0%), render 0.17 ms (0%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide): 39 ms/frame = 25.8 fps (640x480) — physics 39 ms (100%), sync (gpu→host) 0.02 ms (0%), render 0.17 ms (0%) — native CUDA (cuda-oxide sm_120) physics, per-dispatch host encode + headless render + snap_rgb">
   <span class="bar-label">Nexus (cuda-oxide)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:99.52%"></span><span class="bar seg-sync" style="width:0.05%"></span><span class="bar seg-render" style="width:0.43%"></span></span>
   <span class="bar-val">39 ms <span class="sub">25.8 fps</span></span>
@@ -174,17 +174,17 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Nexus: 5.20 ms/frame = 192 fps (480x368 @ 64 spp) — physics 2.88 ms (55%), sync (gpu→host) 0.07 ms (1%), render 2.25 ms (43%)">
+<div class="bar-row" tabindex="0" title="Nexus: 5.20 ms/frame = 192 fps (480x368 @ 64 spp) — physics 2.88 ms (55%), sync (gpu→host) 0.07 ms (1%), render 2.25 ms (43%) — kiss3d 0.45 wgpu path tracer, headless + transform-only TLAS fast path (per-frame BLAS re-bake eliminated — vs laptop&#x27;s 242 ms/frame)">
   <span class="bar-label">Nexus<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:1.38%"></span><span class="bar seg-sync" style="width:0.03%"></span><span class="bar seg-render" style="width:1.08%"></span></span>
   <span class="bar-val">5.20 ms <span class="sub">192 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 82 ms/frame = 12.1 fps (480x368 @ 64 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 82 ms/frame = 12.1 fps (480x368 @ 64 spp) — no per-segment breakdown — LuisaRender (CUDA), from-source build (pip-wheel CUDA 12.9 toolchain); NVRTC falls back from native sm_120 to forward-compat PTX, so this likely underperforms the silicon">
   <span class="bar-label">Genesis<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:39.2%"></span></span>
   <span class="bar-val">82 ms <span class="sub">12.1 fps</span><br><span class="sub">incl. readback (≤1% of frame time)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Isaac Sim: 209 ms/frame = 4.8 fps (480x368 @ 64 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Isaac Sim: 209 ms/frame = 4.8 fps (480x368 @ 64 spp) — no per-segment breakdown — Omniverse RTX PathTracing via Camera sensor — Isaac Sim 6.0.1.0. The low fps is NOT tracing cost: a static version of this scene renders at 142 fps. A tumbling cube restarts RTX progressive accumulation every frame (~100 ms/frame invalidation, spp-independent) and the dome light adds ~73 ms of env-sampling rebuild. The LeRobot RT row is quasi-static (PD hold) and dodges this, which is why the robot outruns the cube.">
   <span class="bar-label">Isaac Sim<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:100.0%"></span></span>
   <span class="bar-val">209 ms <span class="sub">4.8 fps</span><br><span class="sub">incl. readback (≤1% of frame time)</span></span>
@@ -193,22 +193,22 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 <h2 class='scene'>Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
-<div class="bar-row" tabindex="0" title="MuJoCo: 0.52 ms/frame = 1,920 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="MuJoCo: 0.52 ms/frame = 1,920 fps (640x480) — no per-segment breakdown — CPU physics + EGL render">
   <span class="bar-label">MuJoCo<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:1.7%"></span></span>
   <span class="bar-val">0.52 ms <span class="sub">1,920 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 7.78 ms/frame = 128 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 7.78 ms/frame = 128 fps (640x480) — no per-segment breakdown — GPU physics + rasterizer">
   <span class="bar-label">Genesis<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:25.5%"></span></span>
   <span class="bar-val">7.78 ms <span class="sub">128 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 25 ms/frame = 40.0 fps (640x480) — physics 24 ms (95%), sync (gpu→host) 0.02 ms (0%), render 1.27 ms (5%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 25 ms/frame = 40.0 fps (640x480) — physics 24 ms (95%), sync (gpu→host) 0.02 ms (0%), render 1.27 ms (5%) — native CUDA + CUDA-graph replay + headless render">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:77.76%"></span><span class="bar seg-sync" style="width:0.07%"></span><span class="bar seg-render" style="width:4.17%"></span></span>
   <span class="bar-val">25 ms <span class="sub">40.0 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 30 ms/frame = 32.8 fps (640x480) — physics 25 ms (83%), sync (gpu→host) 2.91 ms (10%), render 2.21 ms (7%)">
+<div class="bar-row" tabindex="0" title="Nexus: 30 ms/frame = 32.8 fps (640x480) — physics 25 ms (83%), sync (gpu→host) 2.91 ms (10%), render 2.21 ms (7%) — WebGPU physics + headless render + snap_rgb">
   <span class="bar-label">Nexus<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:83.20%"></span><span class="bar seg-sync" style="width:9.56%"></span><span class="bar seg-render" style="width:7.24%"></span></span>
   <span class="bar-val">30 ms <span class="sub">32.8 fps</span></span>
@@ -216,22 +216,22 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Isaac Sim: 23 ms/frame = 43.4 fps (640x480 @ 32 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Isaac Sim: 23 ms/frame = 43.4 fps (640x480 @ 32 spp) — no per-segment breakdown — PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing — Isaac Sim 6.0.1.0; URDF import ported to 6.0&#x27;s convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames — see the cube RT row for what per-frame motion costs this renderer.">
   <span class="bar-label">Isaac Sim<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:5.0%"></span></span>
   <span class="bar-val">23 ms <span class="sub">43.4 fps</span><br><span class="sub">incl. readback (≤1% of frame time)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 24 ms/frame = 41.2 fps (640x480 @ 32 spp) — physics 24 ms (99%), sync (gpu→host) 0.02 ms (0%), render 0.30 ms (1%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 24 ms/frame = 41.2 fps (640x480 @ 32 spp) — physics 24 ms (99%), sync (gpu→host) 0.02 ms (0%), render 0.30 ms (1%) — native CUDA + CUDA-graph replay + kiss3d path tracer (transform-only TLAS fast path)">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:5.21%"></span><span class="bar seg-sync" style="width:0.00%"></span><span class="bar seg-render" style="width:0.06%"></span></span>
   <span class="bar-val">24 ms <span class="sub">41.2 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 28 ms/frame = 35.4 fps (640x480 @ 32 spp) — physics 25 ms (87%), sync (gpu→host) 0.67 ms (2%), render 2.92 ms (10%)">
+<div class="bar-row" tabindex="0" title="Nexus: 28 ms/frame = 35.4 fps (640x480 @ 32 spp) — physics 25 ms (87%), sync (gpu→host) 0.67 ms (2%), render 2.92 ms (10%) — WebGPU physics + kiss3d path tracer (transform-only TLAS fast path)">
   <span class="bar-label">Nexus<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:5.36%"></span><span class="bar seg-sync" style="width:0.15%"></span><span class="bar seg-render" style="width:0.63%"></span></span>
   <span class="bar-val">28 ms <span class="sub">35.4 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 460 ms/frame = 2.2 fps (640x480 @ 32 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 460 ms/frame = 2.2 fps (640x480 @ 32 spp) — no per-segment breakdown — GPU physics (PD stance hold) + LuisaRender (CUDA) path tracer — same PTX-fallback caveat as the cube RT row">
   <span class="bar-label">Genesis<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:100.0%"></span></span>
   <span class="bar-val">460 ms <span class="sub">2.2 fps</span><br><span class="sub">incl. readback (≤1% of frame time)</span></span>
@@ -424,37 +424,37 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
-<div class="bar-row" tabindex="0" title="MuJoCo: 0.59 ms/frame = 1,684 fps (640x480) — physics 0.02 ms (3%), render 0.58 ms (97%)">
+<div class="bar-row" tabindex="0" title="MuJoCo: 0.59 ms/frame = 1,684 fps (640x480) — physics 0.02 ms (3%), render 0.58 ms (97%) — CPU physics + EGL render">
   <span class="bar-label">MuJoCo<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:0.03%"></span><span class="bar seg-render" style="width:1.05%"></span></span>
   <span class="bar-val">0.59 ms <span class="sub">1,684 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="mjlab (MuJoCo-Warp): 1.77 ms/frame = 565 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="mjlab (MuJoCo-Warp): 1.77 ms/frame = 565 fps (640x480) — no per-segment breakdown — GPU (MuJoCo-Warp) + host EGL render">
   <span class="bar-label">mjlab (MuJoCo-Warp)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:3.2%"></span></span>
   <span class="bar-val">1.77 ms <span class="sub">565 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 2.05 ms/frame = 487 fps (640x480) — physics 1.07 ms (52%), render 0.99 ms (48%)">
+<div class="bar-row" tabindex="0" title="Genesis: 2.05 ms/frame = 487 fps (640x480) — physics 1.07 ms (52%), render 0.99 ms (48%) — GPU physics + render (warmed up: taichi/render JIT excluded)">
   <span class="bar-label">Genesis<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:1.94%"></span><span class="bar seg-render" style="width:1.80%"></span></span>
   <span class="bar-val">2.05 ms <span class="sub">487 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 3.79 ms/frame = 264 fps (640x480) — physics 3.60 ms (95%), sync (gpu→host) 0.01 ms (0%), render 0.18 ms (5%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 3.79 ms/frame = 264 fps (640x480) — physics 3.60 ms (95%), sync (gpu→host) 0.01 ms (0%), render 0.18 ms (5%) — native CUDA (cuda-oxide) physics, whole solver-step sequence captured into a CUDA graph (one cuGraphLaunch/frame) + WebGPU render + pipelined readback">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:6.54%"></span><span class="bar seg-sync" style="width:0.02%"></span><span class="bar seg-render" style="width:0.33%"></span></span>
   <span class="bar-val">3.79 ms <span class="sub">264 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 12 ms/frame = 85.2 fps (640x480) — physics 11 ms (97%), sync (gpu→host) 0.16 ms (1%), render 0.24 ms (2%)">
+<div class="bar-row" tabindex="0" title="Nexus: 12 ms/frame = 85.2 fps (640x480) — physics 11 ms (97%), sync (gpu→host) 0.16 ms (1%), render 0.24 ms (2%) — GPU (WebGPU) physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 33 fps vsync-locked windowed)">
   <span class="bar-label">Nexus<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:20.64%"></span><span class="bar seg-sync" style="width:0.28%"></span><span class="bar seg-render" style="width:0.44%"></span></span>
   <span class="bar-val">12 ms <span class="sub">85.2 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (CPU): 27 ms/frame = 37.5 fps (640x480) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Nexus (CPU): 27 ms/frame = 37.5 fps (640x480) — no per-segment breakdown — CPU physics + headless render + pipelined snap_rgb_async() readback (patched kiss3d; was 26.5 fps vsync-locked windowed)">
   <span class="bar-label">Nexus (CPU)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:48.5%"></span></span>
   <span class="bar-val">27 ms <span class="sub">37.5 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide): 55 ms/frame = 18.2 fps (640x480) — physics 55 ms (100%), sync (gpu→host) 0.02 ms (0%), render 0.24 ms (0%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide): 55 ms/frame = 18.2 fps (640x480) — physics 55 ms (100%), sync (gpu→host) 0.02 ms (0%), render 0.24 ms (0%) — native CUDA (cuda-oxide) physics + WebGPU render + pipelined readback (fixed-grid dispatch: no per-dispatch stream drain; was 5.6 fps with indirect dispatch)">
   <span class="bar-label">Nexus (cuda-oxide)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:99.53%"></span><span class="bar seg-sync" style="width:0.03%"></span><span class="bar seg-render" style="width:0.43%"></span></span>
   <span class="bar-val">55 ms <span class="sub">18.2 fps</span></span>
@@ -462,17 +462,17 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Genesis: 70 ms/frame = 14.3 fps (480x368 @ 64 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 70 ms/frame = 14.3 fps (480x368 @ 64 spp) — no per-segment breakdown — LuisaRender (CUDA)">
   <span class="bar-label">Genesis<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:27.2%"></span></span>
   <span class="bar-val">70 ms <span class="sub">14.3 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Isaac Sim: 83 ms/frame = 12 fps (480x368 @ 64 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Isaac Sim: 83 ms/frame = 12 fps (480x368 @ 64 spp) — no per-segment breakdown — Omniverse RTX PathTracing">
   <span class="bar-label">Isaac Sim<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:32.3%"></span></span>
   <span class="bar-val">83 ms <span class="sub">12 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 257 ms/frame = 3.9 fps (480x368 @ 64 spp) — physics 9.46 ms (4%), sync (gpu→host) 0.31 ms (0%), render 244 ms (95%), readback 3.56 ms (1%)">
+<div class="bar-row" tabindex="0" title="Nexus: 257 ms/frame = 3.9 fps (480x368 @ 64 spp) — physics 9.46 ms (4%), sync (gpu→host) 0.31 ms (0%), render 244 ms (95%), readback 3.56 ms (1%) — kiss3d 0.45 wgpu path tracer, headless + pipelined readback (tracing-bound; whole-loop timing; TLAS-only update patch changes nothing here — 2 meshes)">
   <span class="bar-label">Nexus<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:3.68%"></span><span class="bar seg-sync" style="width:0.12%"></span><span class="bar seg-render" style="width:94.81%"></span><span class="bar seg-readback" style="width:1.38%"></span></span>
   <span class="bar-val">257 ms <span class="sub">3.9 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
@@ -481,22 +481,22 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <h2 class='scene'>Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
-<div class="bar-row" tabindex="0" title="MuJoCo: 1.87 ms/frame = 536 fps (640x480) — physics 0.06 ms (3%), render 1.81 ms (97%)">
+<div class="bar-row" tabindex="0" title="MuJoCo: 1.87 ms/frame = 536 fps (640x480) — physics 0.06 ms (3%), render 1.81 ms (97%) — CPU physics (PD stance hold) + EGL render">
   <span class="bar-label">MuJoCo<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:0.04%"></span><span class="bar seg-render" style="width:1.19%"></span></span>
   <span class="bar-val">1.87 ms <span class="sub">536 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 8.48 ms/frame = 118 fps (640x480) — physics 5.09 ms (60%), render 3.39 ms (40%)">
+<div class="bar-row" tabindex="0" title="Genesis: 8.48 ms/frame = 118 fps (640x480) — physics 5.09 ms (60%), render 3.39 ms (40%) — GPU physics (PD stance hold, grid-searched hipy bias) + render (warmed up: taichi/render JIT excluded)">
   <span class="bar-label">Genesis<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:3.36%"></span><span class="bar seg-render" style="width:2.24%"></span></span>
   <span class="bar-val">8.48 ms <span class="sub">118 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 28 ms/frame = 35.1 fps (640x480) — physics 26 ms (91%), sync (gpu→host) 0.02 ms (0%), render 2.67 ms (9%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 28 ms/frame = 35.1 fps (640x480) — physics 26 ms (91%), sync (gpu→host) 0.02 ms (0%), render 2.67 ms (9%) — native CUDA (cuda-oxide) multibody physics, CUDA-graph replay (one cuGraphLaunch/frame) + WebGPU render + pipelined readback; passive collapse (no torque hold in this demo)">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:17.03%"></span><span class="bar seg-sync" style="width:0.01%"></span><span class="bar seg-render" style="width:1.76%"></span></span>
   <span class="bar-val">28 ms <span class="sub">35.1 fps</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 152 ms/frame = 6.6 fps (640x480) — physics 143 ms (94%), sync (gpu→host) 3.98 ms (3%), render 4.62 ms (3%)">
+<div class="bar-row" tabindex="0" title="Nexus: 152 ms/frame = 6.6 fps (640x480) — physics 143 ms (94%), sync (gpu→host) 3.98 ms (3%), render 4.62 ms (3%) — GPU (WebGPU) multibody, passive (no torque API) + headless pipelined readback (physics-bound)">
   <span class="bar-label">Nexus<span class="sub"> 640x480</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:94.32%"></span><span class="bar seg-sync" style="width:2.63%"></span><span class="bar seg-render" style="width:3.05%"></span></span>
   <span class="bar-val">152 ms <span class="sub">6.6 fps</span></span>
@@ -504,22 +504,22 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Isaac Sim: 14 ms/frame = 70.1 fps (640x480 @ 32 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Isaac Sim: 14 ms/frame = 70.1 fps (640x480 @ 32 spp) — no per-segment breakdown — PhysX (PD hold, pinned base) + Omniverse RTX PathTracing">
   <span class="bar-label">Isaac Sim<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:3.8%"></span></span>
   <span class="bar-val">14 ms <span class="sub">70.1 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 204 ms/frame = 4.9 fps (640x480 @ 32 spp) — physics 27 ms (13%), sync (gpu→host) 0.06 ms (0%), render 0.84 ms (0%), readback 177 ms (86%)">
+<div class="bar-row" tabindex="0" title="Nexus (cuda-oxide + CUDA graph): 204 ms/frame = 4.9 fps (640x480 @ 32 spp) — physics 27 ms (13%), sync (gpu→host) 0.06 ms (0%), render 0.84 ms (0%), readback 177 ms (86%) — native CUDA (cuda-oxide) multibody physics via CUDA-graph replay + kiss3d wgpu path tracer (full-res, TLAS-only update)">
   <span class="bar-label">Nexus (cuda-oxide + CUDA graph)<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:7.31%"></span><span class="bar seg-sync" style="width:0.02%"></span><span class="bar seg-render" style="width:0.23%"></span><span class="bar seg-readback" style="width:48.36%"></span></span>
   <span class="bar-val">204 ms <span class="sub">4.9 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Nexus: 312 ms/frame = 3.2 fps (640x480 @ 32 spp) — physics 101 ms (32%), sync (gpu→host) 0.65 ms (0%), render 207 ms (66%), readback 3.84 ms (1%)">
+<div class="bar-row" tabindex="0" title="Nexus: 312 ms/frame = 3.2 fps (640x480 @ 32 spp) — physics 101 ms (32%), sync (gpu→host) 0.65 ms (0%), render 207 ms (66%), readback 3.84 ms (1%) — kiss3d wgpu path tracer (HW ray query), headless, full-res (patched kiss3d: TLAS-only update for rigid motion + single 32-spp call; was 1.0 fps re-baking all meshes, traced at half res)">
   <span class="bar-label">Nexus<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:27.58%"></span><span class="bar seg-sync" style="width:0.18%"></span><span class="bar seg-render" style="width:56.81%"></span><span class="bar seg-readback" style="width:1.05%"></span></span>
   <span class="bar-val">312 ms <span class="sub">3.2 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>
 </div>
-<div class="bar-row" tabindex="0" title="Genesis: 365 ms/frame = 2.7 fps (640x480 @ 32 spp) — no per-segment breakdown">
+<div class="bar-row" tabindex="0" title="Genesis: 365 ms/frame = 2.7 fps (640x480 @ 32 spp) — no per-segment breakdown — GPU physics (PD stance hold) + LuisaRender (CUDA) path tracer">
   <span class="bar-label">Genesis<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:100.0%"></span></span>
   <span class="bar-val">365 ms <span class="sub">2.7 fps</span><br><span class="sub">incl. readback (not re-measured)</span></span>

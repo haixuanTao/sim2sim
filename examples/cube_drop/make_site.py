@@ -324,6 +324,8 @@ def _fps_chart_for(mode: str, label: str) -> str:
         fps = nocap or r["fps"]
         width = max(100 * ms / vmax, 0.4)
         fill, tip = _bar_fill(r, width, ms, drop_readback=bool(nocap))
+        if r.get("pipeline"):
+            tip += " — " + html.escape(r["pipeline"])
         sub = f"{r.get('resolution', '')}{' @ ' + str(r['spp']) + ' spp' if r.get('spp') else ''}"
         if nocap:
             extra = ""
