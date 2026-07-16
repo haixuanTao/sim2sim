@@ -145,7 +145,7 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 
 <section class='mpanel' data-mid='desktop-5090'>
 <div class='tiles'><div class='tile'><span class='tile-label'>GPU</span><span class='tile-val'>NVIDIA GeForce RTX 5090</span></div><div class='tile'><span class='tile-label'>Driver</span><span class='tile-val'>595.71.05</span></div><div class='tile'><span class='tile-label'>VRAM</span><span class='tile-val'>32607 MiB</span></div><div class='tile'><span class='tile-label'>CPU</span><span class='tile-val'>Intel(R) Core(TM) Ultra 9 285K</span></div><div class='tile'><span class='tile-label'>RAM</span><span class='tile-val'>62 GB</span></div><div class='tile'><span class='tile-label'>OS</span><span class='tile-val'>Linux 6.17.0-35-generic</span></div></div>
-<p class='sub'>33 shown measurements · generated 2026-07-16T12:10:00 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
+<p class='sub'>34 shown measurements · generated 2026-07-16T12:10:00 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
@@ -229,6 +229,11 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
+<div class="bar-row" tabindex="0" title="Genesis (Nyx): 7.50 ms/frame = 133 fps (640x480 @ 32 spp) — physics 3.09 ms (41%), render 4.40 ms (59%) — Genesis GPU physics (per-DOF PD stance hold, same scene as genesis_render.py) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp — that row&#x27;s NVRTC sm_120 PTX fallback likely understates it, so treat 58x as an upper bound. Unlike Isaac&#x27;s RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static.">
+  <span class="bar-label">Genesis (Nyx)<span class="sub"> 640x480 @ 32 spp</span></span>
+  <span class="bar-track"><span class="bar seg-physics" style="width:0.67%"></span><span class="bar seg-render" style="width:0.96%"></span></span>
+  <span class="bar-val">7.50 ms <span class="sub">133 fps</span></span>
+</div>
 <div class="bar-row" tabindex="0" title="Isaac Sim: 23 ms/frame = 43.4 fps (640x480 @ 32 spp) — no per-segment breakdown — PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing — Isaac Sim 6.0.1.0; URDF import ported to 6.0&#x27;s convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames — see the cube RT row for what per-frame motion costs this renderer.">
   <span class="bar-label">Isaac Sim<span class="sub"> 640x480 @ 32 spp</span></span>
   <span class="bar-track"><span class="bar bar-flat" style="width:5.0%"></span></span>
@@ -349,6 +354,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>Genesis</td><td>LeRobot legs — Rasterized (native renderer)</td><td>128</td><td>7.78</td><td>—</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (real STL robot, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Rasterized (native renderer)</td><td>40.0</td><td>25</td><td>24 / 0.02 / 1.27</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Nexus</td><td>LeRobot legs — Rasterized (native renderer)</td><td>32.8</td><td>30</td><td>25 / 2.91 / 2.21</td><td>—</td><td>640x480</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
+<tr><td>Genesis (Nyx)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>133</td><td>7.50</td><td>3.09 / — / 4.40</td><td>2,265</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
 <tr><td>Isaac Sim</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>43.4 †</td><td>23</td><td>—</td><td>1,469</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)</td></tr>
 <tr><td>Nexus (cuda-oxide + CUDA graph)</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>41.2</td><td>24</td><td>24 / 0.02 / 0.30</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Nexus</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>35.4</td><td>28</td><td>25 / 0.67 / 2.92</td><td>—</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
@@ -379,7 +385,13 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 </div>
 <h2 class='scene'>Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)</h2>
 
-
+<h3>Ray traced — engine's own path tracer</h3><div class='gallery'>
+<figure>
+  <video src="../../lerobot_legs/lerobot_genesis_nyx.mp4" controls loop muted playsinline></video>
+  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>133 fps</span>
+  <span class="sub">640x480 @ 32 spp</span></figcaption>
+</figure>
+</div>
 <h2 class='scene'>Scene 3 — LeRobot × 2,048 parallel envs (physics throughput, no rendering)</h2>
 
 <h2 class='scene'>Startup — time to first physics step (LeRobot scene, single env)</h2>
