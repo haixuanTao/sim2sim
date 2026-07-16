@@ -59,7 +59,7 @@ SCENES = {
 }
 BACKEND_LABEL = {
     "mujoco": "MuJoCo", "mjlab": "mjlab (MuJoCo-Warp)",
-    "genesis": "Genesis", "nexus": "Nexus",
+    "genesis": "Genesis", "genesis_nyx": "Genesis (Nyx)", "nexus": "Nexus",
     "nexus_cpu": "Nexus (CPU)", "nexus_cuda": "Nexus (cuda-oxide)", "nexus_cuda_graph": "Nexus (cuda-oxide + CUDA graph)", "isaac": "Isaac Sim",
 }
 
