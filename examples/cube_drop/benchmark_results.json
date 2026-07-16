@@ -106,7 +106,10 @@
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15",
           "video": "cube_rt_nexus_native.mp4",
           "segments_source": "measured 2026-07-15",
-          "fps_nocapture": 192.2
+          "fps_nocapture": 192.2,
+          "physics_ms": 2.89,
+          "render_ms": 2.26,
+          "split_basis": "from measured segments; this row's published fps is the whole loop, not render only"
         },
         {
           "backend": "nexus_cuda",
@@ -212,7 +215,10 @@
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15",
           "video": "../lerobot_legs/lerobot_nexus_rt.mp4",
           "segments_source": "measured 2026-07-15",
-          "fps_nocapture": 35.4
+          "fps_nocapture": 35.4,
+          "physics_ms": 24.35,
+          "render_ms": 2.88,
+          "split_basis": "from measured segments; this row's published fps is the whole loop, not render only"
         },
         {
           "backend": "nexus_cuda_graph",
@@ -274,7 +280,10 @@
           "physics_steps_s": 2283,
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
           "pipeline": "LuisaRender (CUDA), from-source build (pip-wheel CUDA 12.9 toolchain); NVRTC falls back from native sm_120 to forward-compat PTX, so this likely underperforms the silicon",
-          "readback_negligible": true
+          "readback_negligible": true,
+          "physics_ms": 1.75,
+          "render_ms": 82.0,
+          "split_basis": "render_ms is the row's published ms/frame, which for this script is the render call only (rend_s = t2-t1); physics_ms derived from physics_steps_s at 4 steps/frame"
         },
         {
           "backend": "genesis",
@@ -286,7 +295,10 @@
           "physics_steps_s": 967,
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
           "pipeline": "GPU physics (PD stance hold) + LuisaRender (CUDA) path tracer \u2014 same PTX-fallback caveat as the cube RT row",
-          "readback_negligible": true
+          "readback_negligible": true,
+          "physics_ms": 7.24,
+          "render_ms": 460.0,
+          "split_basis": "render_ms is the row's published ms/frame, which for this script is the render call only (rend_s = t2-t1); physics_ms derived from physics_steps_s at 7 steps/frame"
         },
         {
           "backend": "nexus_cuda_graph",
@@ -370,7 +382,10 @@
           "physics_steps_s": 1099,
           "readback_negligible": true,
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
-          "pipeline": "Omniverse RTX PathTracing via Camera sensor \u2014 Isaac Sim 6.0.1.0. The low fps is NOT tracing cost: a static version of this scene renders at 142 fps. A tumbling cube restarts RTX progressive accumulation every frame (~100 ms/frame invalidation, spp-independent) and the dome light adds ~73 ms of env-sampling rebuild. The LeRobot RT row is quasi-static (PD hold) and dodges this, which is why the robot outruns the cube."
+          "pipeline": "Omniverse RTX PathTracing via Camera sensor \u2014 Isaac Sim 6.0.1.0. The low fps is NOT tracing cost: a static version of this scene renders at 142 fps. A tumbling cube restarts RTX progressive accumulation every frame (~100 ms/frame invalidation, spp-independent) and the dome light adds ~73 ms of env-sampling rebuild. The LeRobot RT row is quasi-static (PD hold) and dodges this, which is why the robot outruns the cube.",
+          "physics_ms": 7.28,
+          "render_ms": 209.0,
+          "split_basis": "render_ms is the row's published ms/frame, which for this script is the render call only (rend_s = t2-t1); physics_ms derived from physics_steps_s at 8 steps/frame"
         },
         {
           "backend": "isaac",
@@ -382,7 +397,10 @@
           "physics_steps_s": 1469,
           "readback_negligible": true,
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
-          "pipeline": "PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing \u2014 Isaac Sim 6.0.1.0; URDF import ported to 6.0's convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames \u2014 see the cube RT row for what per-frame motion costs this renderer."
+          "pipeline": "PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing \u2014 Isaac Sim 6.0.1.0; URDF import ported to 6.0's convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames \u2014 see the cube RT row for what per-frame motion costs this renderer.",
+          "physics_ms": 4.77,
+          "render_ms": 23.0,
+          "split_basis": "render_ms is the row's published ms/frame, which for this script is the render call only (rend_s = t2-t1); physics_ms derived from physics_steps_s at 7 steps/frame"
         },
         {
           "backend": "genesis_nyx",
@@ -403,7 +421,10 @@
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
           "pipeline": "Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py's LuisaRender setup \u2014 same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) \u2014 so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row's NVRTC sm_120 PTX fallback likely understates it. NOTE: at 480x368 this row is overhead-bound, not tracing-bound \u2014 see the resolution sweep (cost/sample falls 5x from 480x368 to 2560x1920), so this number understates Nyx. The video is rendered at 1280x960 for legibility; the fps is the 480x368 measurement.",
           "video": "cube_rt_genesis_nyx.mp4",
-          "video_res": "1280x960"
+          "video_res": "1280x960",
+          "physics_ms": 1.17,
+          "render_ms": 2.11,
+          "split_basis": "from measured segments; this row's published fps is the whole loop, not render only"
         },
         {
           "backend": "genesis_nyx",
@@ -424,7 +445,10 @@
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
           "pipeline": "Genesis GPU physics (per-DOF PD stance hold) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main). Scene mirrors genesis_rt_render.py's LuisaRender setup \u2014 same Rough plane and same area light (intensity 12, radius 1.5, soft contact shadows under the feet). ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp; lighting cost ~0%, so the gap is not a lit-vs-unlit artifact. Unlike Isaac's RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static. Upper bound: the LuisaRender row's NVRTC sm_120 PTX fallback likely understates it.",
           "video": "../lerobot_legs/lerobot_genesis_nyx.mp4",
-          "video_res": "1280x960"
+          "video_res": "1280x960",
+          "physics_ms": 3.11,
+          "render_ms": 4.37,
+          "split_basis": "from measured segments; this row's published fps is the whole loop, not render only"
         }
       ],
       "nyx_res_sweep": [

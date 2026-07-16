@@ -208,6 +208,57 @@ def res_sweep_section() -> str:
     )
 
 
+def split_section() -> str:
+    """Physics and render costs, separated.
+
+    The headline fps mixes them, and worse, it does not mix them the same way in
+    every row: genesis_rt_native.py / isaac_rt_native.py time ONLY the render
+    call (``rend_s += t2 - t1``), so their published fps is render-only, while
+    nexus_rt_native.py / genesis_nyx_native.py time the whole loop. Comparing
+    those directly compares different quantities. This section puts every row on
+    both bases so the columns mean one thing each.
+    """
+    scenes = [("Cube drop — 480×368 @ 64 spp", "rt_native"),
+              ("LeRobot legs — 640×480 @ 32 spp", "lerobot_rt")]
+    out = []
+    for title, mode in scenes:
+        rows = [r for r in DATA["rows"] if r["mode"] == mode and r.get("render_ms")]
+        if not rows:
+            continue
+        body = "".join(
+            f"<tr><td>{BACKEND_LABEL.get(r['backend'], r['backend'])}</td>"
+            f"<td>{r['physics_ms']:.2f}</td><td>{r['render_ms']:.2f}</td>"
+            f"<td><strong>{fmt(round(1000 / r['render_ms'], 1))}</strong></td>"
+            f"<td>{fmt(r.get('fps_nocapture') or r.get('fps'))}</td>"
+            f"<td class='sub'>{'render-only' if 'published fps is the whole loop' not in r.get('split_basis', '') else 'whole loop'}</td></tr>"
+            for r in sorted(rows, key=lambda r: r["render_ms"])
+        )
+        out.append(
+            f"<h3>{title}</h3><div class='tablewrap'><table><thead><tr>"
+            "<th>Backend</th><th>Physics ms/frame</th><th>Render ms/frame</th>"
+            "<th>Render-only fps</th><th>Published fps</th><th>Published fps measures</th>"
+            f"</tr></thead><tbody>{body}</tbody></table></div>"
+        )
+    if not out:
+        return ""
+    return (
+        "<h2 class='scene'>Physics vs render, separated</h2>"
+        "<p class='sub'>The headline fps folds physics and rendering together — and the rows do "
+        "not fold them the same way. <code>genesis_rt_native.py</code> and "
+        "<code>isaac_rt_native.py</code> time only the render call, so their published fps is "
+        "<strong>render-only</strong>; <code>nexus_rt_native.py</code> and "
+        "<code>genesis_nyx_native.py</code> time the <strong>whole loop</strong>. So the fps "
+        "column above does not compare like with like, and separating the stages changes the "
+        "conclusion: on the cube, Nyx and Nexus are within ~7% as path tracers (474 vs 442 "
+        "render-only fps) rather than the ~1.7× the combined number suggests — and on the robot "
+        "<strong>Nexus's renderer is the faster of the two</strong> (347 vs 229), losing only "
+        "because its physics costs 24.4 ms/frame against Genesis's 3.1. Physics ms is derived "
+        "from <code>physics_steps_s</code> at each script's steps-per-frame where segments were "
+        "not recorded.</p>"
+        + "".join(out)
+    )
+
+
 def light_parity_section() -> str:
     """Scene-parity caveat for the native-RT rows + what the disagreement costs.
 
@@ -507,6 +558,7 @@ def _panel(mach: dict) -> str:
         "<th>Physics steps/s</th><th>Resolution</th><th>spp</th><th>GPU</th><th>Source</th></tr></thead>\n"
         f"<tbody>\n{table_rows()}\n</tbody>\n</table></div></details>"
     )
+    parts.append(split_section())
     parts.append(res_sweep_section())
     parts.append(light_parity_section())
     vids = video_cards()
