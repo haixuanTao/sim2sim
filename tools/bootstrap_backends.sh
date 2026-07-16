@@ -21,14 +21,35 @@
 #                               warp.context; warp-lang<1.15 does not fix it.
 #                               No working combination found by pinning.
 #                               This repo's [mjlab] extra also omits scipy.
-#   Nexus         pip           INSUFFICIENT. The dimforge-nexus3d wheel has
-#                               none of the APIs the Nexus rows are measured
-#                               with: snap_rgb, snap_rgb_async, raytrace_frame,
-#                               body_pose, set_rbd_steps_per_frame. Those rows
-#                               came from locally patched kiss3d + nexus3d
-#                               builds (kiss3d PR #397, feat/python-rt-render,
-#                               dimforge/nexus PR #16). Not reproducible from
-#                               PyPI at any version.
+#   Nexus         pip           INSUFFICIENT -- but see --nexus-src below, which
+#                               DOES reproduce the rows. The dimforge-nexus3d
+#                               wheel has none of the APIs the Nexus rows are
+#                               measured with: snap_rgb, snap_rgb_async,
+#                               raytrace_frame, body_pose. Building from source
+#                               works, and needs FIVE repos on four non-default
+#                               branches, wired by [patch.crates-io] path
+#                               entries that assume they are siblings:
+#
+#                                 nexus      local/integration
+#                                 kiss3d     feat/rt-transform-fastpath
+#                                 khal       feat/cuda-graph-capture-fixes
+#                                 vortx      rebase/nexus-0.4
+#                                 cuda-oxide main   (NVlabs fork)
+#
+#                               Branch choice is not documented anywhere and was
+#                               recovered by diffing exposed symbols/features:
+#                               local/integration is the only nexus branch with
+#                               the full API set (feat/python-rt-render has a
+#                               subset); rt-transform-fastpath is the only kiss3d
+#                               branch stacking all three fixes; vortx and khal
+#                               must both carry the cuda-oxide feature or cargo
+#                               will not resolve.
+#
+#                               And khal's feat/cuda-graph-capture-fixes pins
+#                               cuda-device to /home/xavier/cuda-oxide-src -- an
+#                               absolute path into another developer's home. It
+#                               cannot build anywhere else until repointed;
+#                               --nexus-src rewrites it at a local clone.
 #   LuisaRender   source        NOT AUTOMATED. Genesis ships zero LuisaRender
 #                               files; enabling gs.renderers.RayTracer means
 #                               compiling ext/LuisaRender (CMake/xmake + CUDA).
@@ -48,7 +69,11 @@ RT="${RT_BUILD_DIR:-$HOME/rt_build}"
 NYX_VENV="$RT/nyx-venv"
 BENCH_VENV="$RT/bench-venv"
 PROBE_ONLY=0
-[[ "${1:-}" == "--probe-only" ]] && PROBE_ONLY=1
+NEXUS_SRC=0
+case "${1:-}" in
+  --probe-only) PROBE_ONLY=1 ;;
+  --nexus-src)  NEXUS_SRC=1 ;;
+esac
 
 have() { command -v "$1" >/dev/null 2>&1; }
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
@@ -75,6 +100,36 @@ if [[ $PROBE_ONLY -eq 0 ]]; then
   uv venv "$BENCH_VENV" --python 3.12
   # scipy is missing from the [mjlab] extra; add it explicitly.
   ( cd "$REPO" && uv pip install --python "$BENCH_VENV/bin/python" -e ".[mujoco,mjlab,nexus]" scipy )
+fi
+
+if [[ $NEXUS_SRC -eq 1 ]]; then
+  say "Nexus from source -> $RT/{nexus,kiss3d,khal,vortx,cuda-oxide}"
+  command -v cargo >/dev/null || { echo "  cargo missing: install rust first"; exit 1; }
+  # Siblings under $RT, because nexus's [patch.crates-io] uses ../<repo> paths.
+  clone_at() {  # clone_at <repo> <branch>
+    local repo="$1" branch="$2" dir="$RT/$1"
+    [[ -d "$dir/.git" ]] || git clone -q "https://github.com/haixuanTao/$repo.git" "$dir"
+    git -C "$dir" fetch -q origin "$branch" && git -C "$dir" checkout -q "$branch"
+    printf '  %-11s %s\n' "$repo" "$(git -C "$dir" branch --show-current)"
+  }
+  clone_at nexus      local/integration
+  clone_at kiss3d     feat/rt-transform-fastpath
+  clone_at khal       feat/cuda-graph-capture-fixes
+  clone_at vortx      rebase/nexus-0.4
+  clone_at cuda-oxide main
+
+  # khal pins cuda-device at /home/xavier/cuda-oxide-src -- unbuildable off that
+  # machine. Repoint at the clone above. Idempotent: only rewrites the absolute path.
+  khal_std="$RT/khal/crates/khal-std/Cargo.toml"
+  if grep -q '/home/xavier/cuda-oxide-src' "$khal_std"; then
+    sed -i 's|path = "/home/xavier/cuda-oxide-src/crates/cuda-device"|path = "../../../cuda-oxide/crates/cuda-device"|' "$khal_std"
+    echo "  patched khal-std: cuda-device -> ../../../cuda-oxide (was /home/xavier/...)"
+  fi
+
+  uv pip install --python "$BENCH_VENV/bin/python" maturin
+  ( cd "$RT/nexus/crates/nexus_python3d" && "$BENCH_VENV/bin/maturin" build --release ) || exit 1
+  uv pip install --python "$BENCH_VENV/bin/python" --reinstall \
+    "$(ls -t "$RT"/nexus/target/wheels/dimforge_nexus3d-*.whl | head -1)"
 fi
 
 say "PROBE -- what can actually be reproduced on this box"
@@ -109,15 +164,18 @@ else:
 
 # The wheel imports fine; it simply is not the build the Nexus rows were
 # measured with. Report that as PARTIAL, not OK and not a hard failure.
+# NOTE: set_rbd_steps_per_frame lives on the state object (nexus.rs), NOT on
+# NexusViewer -- probing it against the viewer reports a false PARTIAL even on a
+# correct source build.
 probe "$BENCH_VENV" nexus '
 import nexus3d as nx
-need = ("snap_rgb", "snap_rgb_async", "raytrace_frame", "body_pose", "set_rbd_steps_per_frame")
-api = dir(nx.NexusViewer)
-missing = [n for n in need if n not in api]
+missing = [n for n in ("snap_rgb", "snap_rgb_async", "snap_rgb_flush", "raytrace_frame", "body_pose")
+           if n not in dir(nx.NexusViewer)]
 if missing:
-    print(f"  {"nexus":22s} PARTIAL PyPI wheel; missing the benchmarked APIs: {", ".join(missing)}")
+    print(f"  {"nexus":22s} PARTIAL PyPI wheel, not the benchmarked build; missing: {", ".join(missing)}")
+    print(f"  {"":22s}         -> rebuild with: tools/bootstrap_backends.sh --nexus-src")
 else:
-    print(f"  {"nexus":22s} OK     patched build detected")'
+    print(f"  {"nexus":22s} OK     source build (patched kiss3d/khal/vortx) detected")'
 
 for v in "$RT/isaac-venv/bin/python" ; do
   [[ -x "$v" ]] && printf '  %-22s OK\n' "isaac" || printf '  %-22s ABSENT (out-of-band; see header)\n' "isaac"
@@ -128,10 +186,17 @@ done
 
 cat <<'EOF'
 
-Reproducible today: MuJoCo, Genesis+Nyx.
-Not reproducible:   mjlab (upstream pin bug), Nexus (PyPI wheel lacks the
-                    measured APIs), Isaac + LuisaRender (not automated here).
-Rows measured with a backend marked BLOCKED/PARTIAL/ABSENT cannot be
-re-measured on this machine -- do not "refresh" them without rebuilding the
-toolchain first, or you will be comparing against numbers you cannot verify.
+Reproducible: MuJoCo, Genesis+Nyx, and Nexus via --nexus-src (verified: the
+              source build runs cube raster + rt_native end to end).
+Not:          mjlab (upstream pin bug -- no working combination by pinning),
+              Isaac + LuisaRender (not automated here).
+Rows measured with a backend marked BROKEN/PARTIAL/ABSENT cannot be re-measured
+on this machine -- do not "refresh" them without rebuilding the toolchain first,
+or you will be comparing against numbers you cannot verify.
+
+Caveat on the Nexus source build: it reproduces the rows' pipeline but not their
+numbers. On driver 580.159.03 it measures ~15% below the panel's driver-595
+figures (cube raster 218 vs 271 gen-fps; rt_native 148 vs 175 fps, physics
+3.62 vs 2.89 ms). Same box, different driver -- so treat the published Nexus
+rows as driver-specific rather than reproducible constants.
 EOF
