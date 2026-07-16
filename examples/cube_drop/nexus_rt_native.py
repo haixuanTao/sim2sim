@@ -18,6 +18,10 @@ import imageio.v2 as imageio
 import nexus3d as nx
 
 FPS = 30
+# Stamped at import so [first-frame] covers everything a user waits through:
+# viewer/pipeline compile, scene insert, first BVH + staging setup.
+_T0 = time.perf_counter()
+
 N_FRAMES = 150
 ACCUM_FRAMES = 8  # raytrace_frame() calls per video frame (sample accumulation)
 SAMPLES_PER_FRAME = 8  # spp added per raytrace_frame() call
@@ -82,11 +86,14 @@ def main() -> None:
 
     # Warmup outside the timers (like the Genesis demos): the first frame pays
     # one-off allocation/BVH/staging-buffer setup.
-    for _ in range(3):
+    for i in range(3):
         pipeline.simulate(viewer, state, ts)
         viewer.sync(state, ts)
         viewer.raytrace_frame()
         viewer.snap_rgb_async()
+        if i == 0:
+            viewer.body_pose(state, cube_h)  # drain, so the stamp is a real frame
+            print(f"[first-frame] nexus-rt-native: {time.perf_counter() - _T0:.2f}s", flush=True)
     viewer.snap_rgb_flush()
 
     frames = []

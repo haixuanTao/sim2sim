@@ -20,6 +20,10 @@ import time
 
 import numpy as np
 
+# Stamped at import so [first-frame] covers what a user waits through:
+# Kit boot, extension load, USD stage, RTX shader cache, first accumulation.
+_T0 = time.perf_counter()
+
 N_FRAMES = 150
 FRAME_DT = 1.0 / 30.0
 HALF = 0.15
@@ -105,6 +109,8 @@ def main() -> None:
     for tick in range(1, 201):
         world.render()
         if np.asarray(cam.get_rgba()).ndim == 3:
+            print(f"[first-frame] isaac: {time.perf_counter() - _T0:.2f}s "
+                  f"({tick} render ticks)", flush=True)
             break
     else:
         raise RuntimeError(

@@ -17,6 +17,10 @@ import argparse
 import time
 from pathlib import Path
 
+# Stamped at import so [first-frame] covers everything a user waits through:
+# engine init, scene build, Taichi JIT, first render allocations.
+_T0 = time.perf_counter()
+
 DURATION_S = 5.0
 FPS = 30
 W, H = 480, 368  # match the other native-RT cube rows
@@ -67,9 +71,11 @@ def main() -> None:
     n_frames = args.frames
     spf = max(1, round((1.0 / FPS) / DT))
 
-    for _ in range(5):  # kernel JIT + first-render allocations
+    for i in range(5):  # kernel JIT + first-render allocations
         scene.step()
         cam.read()
+        if i == 0:
+            print(f"[first-frame] genesis-nyx: {time.perf_counter() - _T0:.2f}s", flush=True)
 
     frames = []
     t_phys = t_render = t_read = 0.0

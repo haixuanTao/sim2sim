@@ -222,7 +222,11 @@ def resource_section() -> str:
         f"<tr><td>{r['label']}</td>"
         f"<td>{r['ram_peak_mb']:,.0f}</td><td>{r['vram_peak_mb']:,.0f}</td>"
         f"<td>{r['cpu_mean_pct']:.0f}%</td><td>{r['gpu_mean_pct']:.0f}%</td>"
-        f"<td class='sub'>{r['wall_s']:.0f} s</td></tr>"
+        f"<td><strong>{r['first_frame_s']:.2f} s</strong></td></tr>"
+        if r.get("first_frame_s") else
+        f"<tr><td>{r['label']}</td>"
+        f"<td>{r['ram_peak_mb']:,.0f}</td><td>{r['vram_peak_mb']:,.0f}</td>"
+        f"<td>{r['cpu_mean_pct']:.0f}%</td><td>{r['gpu_mean_pct']:.0f}%</td><td>—</td></tr>"
         for r in sorted(prof, key=lambda r: r["vram_peak_mb"])
     )
     return (
@@ -240,9 +244,10 @@ def resource_section() -> str:
         "double-counts shared pages); VRAM is per-PID from nvidia-smi's compute-apps table; GPU "
         "util is device-wide and only sampled with the GPU otherwise idle. Peaks include one-time "
         "JIT / shader-cache / stage-load costs, deliberately — peak footprint is what sizes a "
-        "machine. Reproduce with <code>tools/resource_profile.py</code>.</p>"
+        "machine. Reproduce with <code>tools/resource_profile.py</code>. <strong>Time to first frame</strong> is process start → first path-traced frame in hand, on warm caches: it is what you wait through before seeing anything, and the spread is 16×. It is not the same as the <em>Startup</em> rows further down — those stop at the first physics step and never touch the render pipeline, so they miss the RTX shader cache and the first path-trace accumulation. Cold is far worse: Genesis's Taichi JIT costs ~74 s and Isaac's first-ever launch compiles an RTX shader cache for ~2 min.</p>"
         "<div class='tablewrap'><table><thead><tr><th>Backend</th><th>RAM peak (MB)</th>"
-        "<th>VRAM peak (MB)</th><th>CPU mean</th><th>GPU mean</th><th>Run</th>"
+        "<th>VRAM peak (MB)</th><th>CPU mean</th><th>GPU mean</th>"
+        "<th>Time to first frame</th>"
         f"</tr></thead><tbody>{body}</tbody></table></div>"
     )
 

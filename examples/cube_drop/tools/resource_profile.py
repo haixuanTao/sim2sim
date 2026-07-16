@@ -152,6 +152,12 @@ def profile(key: str, spec: dict) -> dict:
         "gpu_peak_pct": stat(gpu, max), "gpu_mean_pct": stat(gpu[skip:] or gpu, lambda x: sum(x) / len(x)),
         "fps_line": next((l for l in out_txt.splitlines()
                           if "fps" in l.lower() and l.startswith("[")), ""),
+        # Process start -> first rendered frame in hand. Complements the `boot`
+        # rows, which stop at the first physics step and never touch the render
+        # pipeline -- so they miss the RTX shader cache and the first path-trace
+        # accumulation entirely.
+        "first_frame_s": next((float(l.split(":")[-1].split("s")[0].strip())
+                               for l in out_txt.splitlines() if "[first-frame]" in l), None),
     }
 
 
