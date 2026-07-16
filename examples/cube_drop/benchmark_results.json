@@ -370,7 +370,7 @@
           "physics_steps_s": 1099,
           "readback_negligible": true,
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
-          "pipeline": "Isaac Sim 6.0.1.0 (~/rt_build/isaac6-venv) \u2014 5.x crashes on driver 595. Lands below the laptop's 5.x number despite the bigger GPU; kit repeatedly fails to bind a nonexistent second CUDA device on this box \u2014 treat as a lower bound. Omniverse RTX PathTracing via Camera sensor."
+          "pipeline": "Omniverse RTX PathTracing via Camera sensor \u2014 Isaac Sim 6.0.1.0. The low fps is NOT tracing cost: a static version of this scene renders at 142 fps. A tumbling cube restarts RTX progressive accumulation every frame (~100 ms/frame invalidation, spp-independent) and the dome light adds ~73 ms of env-sampling rebuild. The LeRobot RT row is quasi-static (PD hold) and dodges this, which is why the robot outruns the cube."
         },
         {
           "backend": "isaac",
@@ -382,7 +382,7 @@
           "physics_steps_s": 1469,
           "readback_negligible": true,
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
-          "pipeline": "Isaac Sim 6.0.1.0 (~/rt_build/isaac6-venv) \u2014 5.x crashes on driver 595. Lands below the laptop's 5.x number despite the bigger GPU; kit repeatedly fails to bind a nonexistent second CUDA device on this box \u2014 treat as a lower bound. PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing; URDF import ported to 6.0's convert-then-reference flow."
+          "pipeline": "PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing \u2014 Isaac Sim 6.0.1.0; URDF import ported to 6.0's convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames \u2014 see the cube RT row for what per-frame motion costs this renderer."
         }
       ]
     },
