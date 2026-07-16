@@ -549,6 +549,14 @@ convert-then-reference URDF flow); they land below the laptop's 5.x numbers — 
 nonexistent second CUDA device on this box — so read them as lower bounds.
 Genesis native ray tracing on the desktop runs via a from-source LuisaRender build (CUDA
 backend, pip-wheel CUDA 12.9 toolchain).</p>
+<p class="sub"><strong>Reading the ray-tracing rows:</strong> fps compares each engine's tracer
+at its own quality point, not equal image quality — kiss3d is a minimal path tracer (simple PBR,
+analytic lights) while Omniverse RTX carries a production pipeline (MDL materials, per-frame
+denoise/AOVs) that costs more per sample and pays a large accumulation restart whenever the scene
+moves (a static scene path-traces at 142 fps on the same box; the tumbling cube drops it to ~5).
+Nexus's speed on <em>dynamic</em> scenes is structural (transform-only TLAS updates), and these
+demo scenes are lit so shadows are actually visible in both raster and RT output — earlier
+recordings used near-headlight suns that hid them.</p>
 <p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
 where that time goes: <strong>physics</strong> (solver steps), <strong>sync</strong> (GPU-sim state
 to host), <strong>render</strong> (draw / path-trace), <strong>readback</strong> (frame pixels to

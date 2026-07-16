@@ -76,6 +76,10 @@ def main() -> None:
     # Each solver step advances 1/60 s; two per 30 fps frame for real time.
     state.set_rbd_steps_per_frame(2)
     viewer.set_camera(nx.Vec3(1.3, -1.3, 0.7), nx.Vec3(0.0, 0.0, 0.25))
+    # The MJCF loader's built-in light is a near-headlight from this camera
+    # (shadows hidden behind the robot). Add a side sun (Z-up) so shadows are
+    # actually visible in both the raster and path-traced output.
+    viewer.add_directional_light(nx.Vec3(-1.0, -1.0, -2.0))
 
     if args.rt:
         viewer.set_raytracer_samples_per_frame(RT_SPP)

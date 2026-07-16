@@ -86,7 +86,10 @@ def main() -> None:
     # Each solver step advances 1/60 s (verified via body_pose()); at 30 fps
     # video we need two steps per frame or the clip plays in 0.5x slow motion.
     state.set_rbd_steps_per_frame(2)
-    viewer.add_directional_light(nx.Vec3(1.0, -3.0, 2.0))
+    # Side-angled sun (Y-up): the old (1,-3,2) travelled with the camera's view
+    # direction, so shadows fell hidden behind objects — RT and raster looked
+    # identical. Perpendicular horizontal component makes shadows visible.
+    viewer.add_directional_light(nx.Vec3(-2.0, -3.0, 1.0))
     viewer.set_camera(nx.Vec3(6.0, 4.0, 6.0), nx.Vec3(0.0, 0.6, 0.0))
 
     ts = nx.GpuTimestamps(viewer, 2048)
