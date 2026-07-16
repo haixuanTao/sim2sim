@@ -142,15 +142,57 @@ def _video_cards_for(mode: str) -> str:
             fps = r.get("fps_nocapture") or r.get("fps")
             badge = f"<span class='badge'>{fmt(fps)} fps</span>" if fps else ""
             spp = f" @ {r['spp']} spp" if r.get("spp") else ""
+            # A video may be recorded larger than the row was measured at (the
+            # row's resolution is fixed by what the other backends use). Say so,
+            # rather than letting the badge read as this video's frame rate.
+            if r.get("video_res") and r["video_res"] != r.get("resolution"):
+                spp = (f" · video {r['video_res']}, fps measured at "
+                       f"{r.get('resolution', '')}{spp}")
+                return_res = ""
+            else:
+                return_res = r.get("resolution", "")
             cards.append(
                 f"""<figure>
   <video src="{r.get('video_url') or '../' + r['video']}" controls loop muted playsinline></video>
   <figcaption><strong>{BACKEND_LABEL.get(r['backend'], r['backend'])}</strong> {badge}
-  <span class="sub">{r.get('resolution', '')}{spp}</span></figcaption>
+  <span class="sub">{return_res}{spp}</span></figcaption>
 </figure>"""
             )
         cards.append("</div>")
     return "\n".join(cards)
+
+
+def res_sweep_section() -> str:
+    """Genesis-Nyx cost vs resolution (tools/nyx_res_sweep.py).
+
+    Exists to keep the cube rt_native row honest: that row is pinned to 480x368
+    because every other native-RT row uses it, but at that size fixed per-frame
+    overhead dominates and the row understates Nyx. The falling ns/sample column
+    is the evidence.
+    """
+    sweep = DATA.get("nyx_res_sweep")
+    if not sweep:
+        return ""
+    base = sweep[0]["ns_per_sample"]
+    rows = "".join(
+        f"<tr><td>{s['resolution']}</td><td>{s['pixels'] / 1e3:.0f} k</td>"
+        f"<td>{s['render_ms']:.2f}</td><td>{fmt(s['render_fps'])}</td>"
+        f"<td>{s['ns_per_sample']:.3f}</td>"
+        f"<td class='sub'>{base / s['ns_per_sample']:.1f}× cheaper/sample</td></tr>"
+        for s in sweep
+    )
+    return (
+        "<h2 class='scene'>Genesis-Nyx — cost vs resolution (cube scene, 64 spp)</h2>"
+        "<p class='sub'>The cube ray-traced row above is measured at 480×368 because that is "
+        "what every other native-RT row uses — but at that size the frame is small enough that "
+        "fixed per-frame overhead, not ray tracing, sets the cost. Per-sample cost keeps falling "
+        "as the frame grows, which means <strong>the 480×368 row understates Nyx</strong>: 28× "
+        "the pixels costs only ~5× the time, and it still path-traces 2560×1920 at 91 fps. "
+        "Reproduce with <code>tools/nyx_res_sweep.py</code>.</p>"
+        "<div class='tablewrap'><table><thead><tr><th>Resolution</th><th>Pixels</th>"
+        "<th>Render ms/frame</th><th>Render fps</th><th>ns/sample</th><th></th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></div>"
+    )
 
 
 def fps_charts() -> str:
@@ -397,6 +439,7 @@ def _panel(mach: dict) -> str:
         "<th>Physics steps/s</th><th>Resolution</th><th>spp</th><th>GPU</th><th>Source</th></tr></thead>\n"
         f"<tbody>\n{table_rows()}\n</tbody>\n</table></div></details>"
     )
+    parts.append(res_sweep_section())
     vids = video_cards()
     if "<figure" in vids:
         parts.append(f"<h3>Videos</h3>\n{vids}")

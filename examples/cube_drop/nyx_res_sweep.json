@@ -1,0 +1,42 @@
+[
+  {
+    "resolution": "480x368",
+    "pixels": 176640,
+    "spp": 64,
+    "render_ms": 2.12,
+    "render_fps": 471.9,
+    "ns_per_sample": 0.187
+  },
+  {
+    "resolution": "960x736",
+    "pixels": 706560,
+    "spp": 64,
+    "render_ms": 2.81,
+    "render_fps": 356.4,
+    "ns_per_sample": 0.062
+  },
+  {
+    "resolution": "1280x960",
+    "pixels": 1228800,
+    "spp": 64,
+    "render_ms": 3.67,
+    "render_fps": 272.8,
+    "ns_per_sample": 0.047
+  },
+  {
+    "resolution": "1920x1440",
+    "pixels": 2764800,
+    "spp": 64,
+    "render_ms": 6.29,
+    "render_fps": 159.0,
+    "ns_per_sample": 0.036
+  },
+  {
+    "resolution": "2560x1920",
+    "pixels": 4915200,
+    "spp": 64,
+    "render_ms": 11.0,
+    "render_fps": 90.9,
+    "ns_per_sample": 0.035
+  }
+]

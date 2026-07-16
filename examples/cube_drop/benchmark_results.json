@@ -401,8 +401,9 @@
           },
           "segments_source": "measured 2026-07-16",
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
-          "pipeline": "Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py's LuisaRender setup \u2014 same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) \u2014 so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row's NVRTC sm_120 PTX fallback likely understates it.",
-          "video": "cube_rt_genesis_nyx.mp4"
+          "pipeline": "Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py's LuisaRender setup \u2014 same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) \u2014 so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row's NVRTC sm_120 PTX fallback likely understates it. NOTE: at 480x368 this row is overhead-bound, not tracing-bound \u2014 see the resolution sweep (cost/sample falls 5x from 480x368 to 2560x1920), so this number understates Nyx. The video is rendered at 1280x960 for legibility; the fps is the 480x368 measurement.",
+          "video": "cube_rt_genesis_nyx.mp4",
+          "video_res": "1280x960"
         },
         {
           "backend": "genesis_nyx",
@@ -422,7 +423,50 @@
           "segments_source": "measured 2026-07-16",
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
           "pipeline": "Genesis GPU physics (per-DOF PD stance hold) + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main). Scene mirrors genesis_rt_render.py's LuisaRender setup \u2014 same Rough plane and same area light (intensity 12, radius 1.5, soft contact shadows under the feet). ~58x the LuisaRender lerobot_rt row (2.2 fps) at identical 640x480/32 spp; lighting cost ~0%, so the gap is not a lit-vs-unlit artifact. Unlike Isaac's RTX renderer, Nyx pays no progressive-accumulation penalty for motion, so this row is not flattered by the scene being quasi-static. Upper bound: the LuisaRender row's NVRTC sm_120 PTX fallback likely understates it.",
-          "video": "../lerobot_legs/lerobot_genesis_nyx.mp4"
+          "video": "../lerobot_legs/lerobot_genesis_nyx.mp4",
+          "video_res": "1280x960"
+        }
+      ],
+      "nyx_res_sweep": [
+        {
+          "resolution": "480x368",
+          "pixels": 176640,
+          "spp": 64,
+          "render_ms": 2.12,
+          "render_fps": 471.9,
+          "ns_per_sample": 0.187
+        },
+        {
+          "resolution": "960x736",
+          "pixels": 706560,
+          "spp": 64,
+          "render_ms": 2.81,
+          "render_fps": 356.4,
+          "ns_per_sample": 0.062
+        },
+        {
+          "resolution": "1280x960",
+          "pixels": 1228800,
+          "spp": 64,
+          "render_ms": 3.67,
+          "render_fps": 272.8,
+          "ns_per_sample": 0.047
+        },
+        {
+          "resolution": "1920x1440",
+          "pixels": 2764800,
+          "spp": 64,
+          "render_ms": 6.29,
+          "render_fps": 159.0,
+          "ns_per_sample": 0.036
+        },
+        {
+          "resolution": "2560x1920",
+          "pixels": 4915200,
+          "spp": 64,
+          "render_ms": 11.0,
+          "render_fps": 90.9,
+          "ns_per_sample": 0.035
         }
       ]
     },

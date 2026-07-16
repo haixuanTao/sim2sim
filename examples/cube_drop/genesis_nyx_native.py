@@ -32,7 +32,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-capture", action="store_true",
                     help="skip the GPU->CPU frame copy (and the MP4): frames stay CUDA-resident")
+    ap.add_argument("--res", default=f"{W}x{H}", metavar="WxH",
+                    help="render resolution (default %(default)s — matches the other native-RT "
+                         "rows, so the benchmark row stays comparable; raise it only for a "
+                         "nicer-looking video, see tools/nyx_res_sweep.py)")
     args = ap.parse_args()
+    w, h = (int(v) for v in args.res.lower().split("x"))
 
     import genesis as gs
 
@@ -51,7 +56,7 @@ def main() -> None:
         surface=gs.surfaces.Rough(color=(0.8, 0.25, 0.2)),
     )
     cam = scene.add_sensor(NyxCameraOptions(
-        res=(W, H), pos=(2.8, -2.8, 2.0), lookat=(0.0, 0.0, 0.4),
+        res=(w, h), pos=(2.8, -2.8, 2.0), lookat=(0.0, 0.0, 0.4),
         spp=SPP, denoise=True, lights=LIGHTS))
     scene.build()
 
@@ -90,7 +95,7 @@ def main() -> None:
         imageio.mimsave(out, frames, fps=FPS)
         print(f"wrote {out}  ({len(frames)} frames @ {FPS}fps)", flush=True)
         print(f"[rt-native] genesis-nyx: {n} frames in {gen_s:.2f}s = "
-              f"{n / gen_s:.1f} fps ({1000 * gen_s / n:.0f} ms/frame @ {SPP} spp, {W}x{H})",
+              f"{n / gen_s:.1f} fps ({1000 * gen_s / n:.0f} ms/frame @ {SPP} spp, {w}x{h})",
               flush=True)
     print(f"[segments] genesis-nyx: physics={1e3 * t_phys / n:.2f}ms "
           f"render={1e3 * t_render / n:.2f}ms readback={1e3 * t_read / n:.2f}ms", flush=True)

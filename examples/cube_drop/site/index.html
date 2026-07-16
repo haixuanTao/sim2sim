@@ -182,7 +182,7 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
-<div class="bar-row" tabindex="0" title="Genesis (Nyx): 3.12 ms/frame = 320 fps (480x368 @ 64 spp) — physics 1.11 ms (36%), render 2.01 ms (64%) — Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py&#x27;s LuisaRender setup — same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) — so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row&#x27;s NVRTC sm_120 PTX fallback likely understates it.">
+<div class="bar-row" tabindex="0" title="Genesis (Nyx): 3.12 ms/frame = 320 fps (480x368 @ 64 spp) — physics 1.11 ms (36%), render 2.01 ms (64%) — Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main), CUDA-resident uint8 output. Scene now mirrors genesis_rt_native.py&#x27;s LuisaRender setup — same Rough surfaces and same area light (intensity 12, radius 1.5, so a soft cast shadow) — so this is the same render as the LuisaRender rt_native row, not just the same geometry. ~24x that row (12.1 fps) at identical 480x368/64 spp; lighting the scene cost only ~2%, so the gap is not a lit-vs-unlit artifact. Still an upper bound: the LuisaRender row&#x27;s NVRTC sm_120 PTX fallback likely understates it. NOTE: at 480x368 this row is overhead-bound, not tracing-bound — see the resolution sweep (cost/sample falls 5x from 480x368 to 2560x1920), so this number understates Nyx. The video is rendered at 1280x960 for legibility; the fps is the 480x368 measurement.">
   <span class="bar-label">Genesis (Nyx)<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:0.53%"></span><span class="bar seg-render" style="width:0.96%"></span></span>
   <span class="bar-val">3.12 ms <span class="sub">320 fps</span></span>
@@ -373,6 +373,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>Isaac Sim</td><td>Startup — Time to first step — single env, warm JIT caches</td><td>—</td><td>5.47 s</td><td>—</td><td>—</td><td>—</td><td>—</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 </tbody>
 </table></div></details>
+<h2 class='scene'>Genesis-Nyx — cost vs resolution (cube scene, 64 spp)</h2><p class='sub'>The cube ray-traced row above is measured at 480×368 because that is what every other native-RT row uses — but at that size the frame is small enough that fixed per-frame overhead, not ray tracing, sets the cost. Per-sample cost keeps falling as the frame grows, which means <strong>the 480×368 row understates Nyx</strong>: 28× the pixels costs only ~5× the time, and it still path-traces 2560×1920 at 91 fps. Reproduce with <code>tools/nyx_res_sweep.py</code>.</p><div class='tablewrap'><table><thead><tr><th>Resolution</th><th>Pixels</th><th>Render ms/frame</th><th>Render fps</th><th>ns/sample</th><th></th></tr></thead><tbody><tr><td>480x368</td><td>177 k</td><td>2.12</td><td>472</td><td>0.187</td><td class='sub'>1.0× cheaper/sample</td></tr><tr><td>960x736</td><td>707 k</td><td>2.81</td><td>356</td><td>0.062</td><td class='sub'>3.0× cheaper/sample</td></tr><tr><td>1280x960</td><td>1229 k</td><td>3.67</td><td>273</td><td>0.047</td><td class='sub'>4.0× cheaper/sample</td></tr><tr><td>1920x1440</td><td>2765 k</td><td>6.29</td><td>159</td><td>0.036</td><td class='sub'>5.2× cheaper/sample</td></tr><tr><td>2560x1920</td><td>4915 k</td><td>11.00</td><td>90.9</td><td>0.035</td><td class='sub'>5.3× cheaper/sample</td></tr></tbody></table></div>
 <h3>Videos</h3>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 
@@ -380,7 +381,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <figure>
   <video src="../cube_rt_genesis_nyx.mp4" controls loop muted playsinline></video>
   <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>320 fps</span>
-  <span class="sub">480x368 @ 64 spp</span></figcaption>
+  <span class="sub"> · video 1280x960, fps measured at 480x368 @ 64 spp</span></figcaption>
 </figure>
 </div>
 <h2 class='scene'>Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)</h2>
@@ -389,7 +390,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <figure>
   <video src="../../lerobot_legs/lerobot_genesis_nyx.mp4" controls loop muted playsinline></video>
   <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>132 fps</span>
-  <span class="sub">640x480 @ 32 spp</span></figcaption>
+  <span class="sub"> · video 1280x960, fps measured at 640x480 @ 32 spp</span></figcaption>
 </figure>
 </div>
 <h2 class='scene'>Scene 3 — LeRobot × 2,048 parallel envs (physics throughput, no rendering)</h2>
@@ -535,6 +536,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>Genesis</td><td>LeRobot legs — Ray traced — engine's own path tracer</td><td>2.7 *</td><td>365</td><td>—</td><td>758</td><td>640x480</td><td>32</td><td>NVIDIA GeForce RTX 5080 Laptop GPU</td><td>measured 2026-07-09 (idle GPU)</td></tr>
 </tbody>
 </table></div></details>
+
 <h3>Videos</h3>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3><div class='gallery'>
