@@ -48,7 +48,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-capture", action="store_true",
                     help="skip the GPU->CPU frame copy (and the MP4): frames stay CUDA-resident")
+    ap.add_argument("--res", default=f"{W}x{H}", metavar="WxH",
+                    help="render resolution (default %(default)s — matches the other LeRobot RT "
+                         "rows, so the benchmark row stays comparable; raise it only for a "
+                         "nicer-looking video)")
     args = ap.parse_args()
+    w, h = (int(v) for v in args.res.lower().split("x"))
 
     import genesis as gs
 
@@ -64,7 +69,7 @@ def main() -> None:
     scene.add_entity(gs.morphs.Plane(), surface=gs.surfaces.Rough(color=(0.65, 0.65, 0.65)))
     robot = scene.add_entity(gs.morphs.MJCF(file=str(ROBOT_XML), pos=(0.0, 0.0, 0.72)))
     cam = scene.add_sensor(NyxCameraOptions(
-        res=(W, H), pos=(1.3, -1.3, 0.85), lookat=(0.0, 0.0, 0.4),
+        res=(w, h), pos=(1.3, -1.3, 0.85), lookat=(0.0, 0.0, 0.4),
         spp=SPP, denoise=True, lights=LIGHTS))
     scene.build()
 
