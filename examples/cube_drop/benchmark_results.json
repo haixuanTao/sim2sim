@@ -13,7 +13,7 @@
         "gpu_driver": "595.71.05",
         "gpu_vram": "32607 MiB"
       },
-      "generated": "2026-07-15T18:18:48",
+      "generated": "2026-07-16T12:10:00",
       "rows": [
         {
           "backend": "mujoco",
@@ -359,6 +359,30 @@
           "boot_init_s": 2.33,
           "source": "measured 2026-07-15 (idle GPU, headless RTX 5090)",
           "pipeline": "AppLauncher (headless kit experience) + InteractiveScene(1 env, WBC-AGILE LeRobot URDF) + first step; RTX shader cache warm. Cold adds the one-time ~2 min RTX shader-cache compile. The bare SimulationApp default experience crashes on driver 595 \u2014 AppLauncher's headless kit is the working path."
+        },
+        {
+          "backend": "isaac",
+          "mode": "rt_native",
+          "fps": 4.8,
+          "ms_per_frame": 209,
+          "resolution": "480x368",
+          "spp": 64,
+          "physics_steps_s": 1099,
+          "readback_negligible": true,
+          "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
+          "pipeline": "Isaac Sim 6.0.1.0 (~/rt_build/isaac6-venv) \u2014 5.x crashes on driver 595. Lands below the laptop's 5.x number despite the bigger GPU; kit repeatedly fails to bind a nonexistent second CUDA device on this box \u2014 treat as a lower bound. Omniverse RTX PathTracing via Camera sensor."
+        },
+        {
+          "backend": "isaac",
+          "mode": "lerobot_rt",
+          "fps": 43.4,
+          "ms_per_frame": 23,
+          "resolution": "640x480",
+          "spp": 32,
+          "physics_steps_s": 1469,
+          "readback_negligible": true,
+          "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
+          "pipeline": "Isaac Sim 6.0.1.0 (~/rt_build/isaac6-venv) \u2014 5.x crashes on driver 595. Lands below the laptop's 5.x number despite the bigger GPU; kit repeatedly fails to bind a nonexistent second CUDA device on this box \u2014 treat as a lower bound. PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing; URDF import ported to 6.0's convert-then-reference flow."
         }
       ]
     },

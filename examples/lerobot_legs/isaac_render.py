@@ -106,6 +106,12 @@ def main() -> None:
     from isaacsim.core.utils.extensions import enable_extension
 
     enable_extension("isaacsim.asset.importer.urdf")
+    # Isaac Sim 6.0 moved the URDF* kit commands into the .ui extension —
+    # without it URDFCreateImportConfig returns None.
+    try:
+        enable_extension("isaacsim.asset.importer.urdf.ui")
+    except Exception:
+        pass  # 5.x has no .ui split
 
     from isaacsim.core.api import World
     from isaacsim.core.api.objects.ground_plane import GroundPlane
@@ -129,13 +135,32 @@ def main() -> None:
 
     _, cfg = omni.kit.commands.execute("URDFCreateImportConfig")
     cfg.fix_base = True  # see module docstring
-    cfg.import_inertia_tensor = True
-    ok, prim_path = omni.kit.commands.execute(
-        "URDFParseAndImportFile", urdf_path=str(patched), import_config=cfg,
-        get_articulation_root=True,
-    )
-    if not ok or not prim_path:
-        raise RuntimeError(f"URDF import failed (ok={ok}, prim_path={prim_path})")
+    if hasattr(cfg, "import_inertia_tensor"):  # dropped in Isaac Sim 6.0
+        cfg.import_inertia_tensor = True
+    if "URDFParseAndImportFile" in omni.kit.commands.get_commands():  # 5.x
+        ok, prim_path = omni.kit.commands.execute(
+            "URDFParseAndImportFile", urdf_path=str(patched), import_config=cfg,
+            get_articulation_root=True,
+        )
+        if not ok or not prim_path:
+            raise RuntimeError(f"URDF import failed (ok={ok}, prim_path={prim_path})")
+    else:  # 6.0: the importer CONVERTS to a USD file (returns its path) and no
+        # longer touches the open stage — reference the result in ourselves.
+        import tempfile as _tf
+        _dest = _tf.mkdtemp(prefix="urdf6_")
+        ok, usd_path = omni.kit.commands.execute(
+            "URDFImportRobot", urdf_path=str(patched), import_config=cfg,
+            dest_path=_dest)
+        if not ok or not usd_path:
+            raise RuntimeError(f"URDF import failed (6.0 path, ret={usd_path})")
+        from isaacsim.core.utils.stage import add_reference_to_stage
+        add_reference_to_stage(usd_path=str(usd_path), prim_path="/World/robot")
+        _stage = omni.usd.get_context().get_stage()
+        _roots = [pr.GetPath().pathString for pr in _stage.Traverse()
+                  if pr.HasAPI(UsdPhysics.ArticulationRootAPI)]
+        if not _roots:
+            raise RuntimeError("no articulation root after 6.0 URDF import")
+        prim_path = _roots[0]
 
     stage = omni.usd.get_context().get_stage()
     for p in stage.Traverse():

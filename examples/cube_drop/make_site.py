@@ -542,7 +542,9 @@ panel; the desktop Scene-3 and Startup rows run headless physics via Isaac Lab's
 experience, which skips the crashing plugins. <strong>Isaac Sim 6.0.1.0 fixes the renderer on
 this driver</strong> (verified 2026-07-15: full RTX experience boots in 11 s and renders camera
 pixels; separate venv at <code>~/rt_build/isaac6-venv</code>, not yet paired with Isaac Lab) —
-desktop Isaac render rows are now possible and pending a port of the render demos to 6.0.
+the desktop Isaac RT rows below were measured on 6.0 (render demos ported to its
+convert-then-reference URDF flow); they land below the laptop's 5.x numbers — kit fights a
+nonexistent second CUDA device on this box — so read them as lower bounds.
 Genesis native ray tracing on the desktop runs via a from-source LuisaRender build (CUDA
 backend, pip-wheel CUDA 12.9 toolchain).</p>
 <p class="sub">Bars show <strong>time per frame</strong> (lower is better, fastest first), split by
