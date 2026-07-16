@@ -145,7 +145,7 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 
 <section class='mpanel' data-mid='desktop-5090'>
 <div class='tiles'><div class='tile'><span class='tile-label'>GPU</span><span class='tile-val'>NVIDIA GeForce RTX 5090</span></div><div class='tile'><span class='tile-label'>Driver</span><span class='tile-val'>595.71.05</span></div><div class='tile'><span class='tile-label'>VRAM</span><span class='tile-val'>32607 MiB</span></div><div class='tile'><span class='tile-label'>CPU</span><span class='tile-val'>Intel(R) Core(TM) Ultra 9 285K</span></div><div class='tile'><span class='tile-label'>RAM</span><span class='tile-val'>62 GB</span></div><div class='tile'><span class='tile-label'>OS</span><span class='tile-val'>Linux 6.17.0-35-generic</span></div></div>
-<p class='sub'>32 shown measurements · generated 2026-07-16T12:10:00 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
+<p class='sub'>33 shown measurements · generated 2026-07-16T12:10:00 · fps are the no-frame-readback loop (frames stay on the GPU; GL renderers sync via a 1×1 readPixels); rows marked * were not re-measured and still include readback; rows marked † include it inherently (the renderer returns the frame as part of rendering) but it is ≤1% of the frame time.</p>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
 <h3>Rasterized (native renderer)</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Rasterized (native renderer)">
@@ -182,6 +182,11 @@ CPU). Hover a bar for per-segment ms. Gray bars have no breakdown yet.</p>
 </div>
 <h3>Ray traced — engine's own path tracer</h3>
 <div class="chart" role="img" aria-label="Bar chart of per-frame time per backend, split by segment (lower is better), Ray traced — engine's own path tracer">
+<div class="bar-row" tabindex="0" title="Genesis (Nyx): 3.21 ms/frame = 312 fps (480x368 @ 64 spp) — physics 1.16 ms (36%), render 2.04 ms (64%) — Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main, torch cu128), CUDA-resident uint8 output. ~24x the from-source LuisaRender rt_native row at identical 480x368/64 spp on this box — that row&#x27;s NVRTC sm_120 PTX fallback likely understates it, so treat 24x as an upper bound. Scene defines no light/env map (the plugin warns), so tracing is cheaper than a lit scene.">
+  <span class="bar-label">Genesis (Nyx)<span class="sub"> 480x368 @ 64 spp</span></span>
+  <span class="bar-track"><span class="bar seg-physics" style="width:0.56%"></span><span class="bar seg-render" style="width:0.98%"></span></span>
+  <span class="bar-val">3.21 ms <span class="sub">312 fps</span></span>
+</div>
 <div class="bar-row" tabindex="0" title="Nexus: 5.20 ms/frame = 192 fps (480x368 @ 64 spp) — physics 2.88 ms (55%), sync (gpu→host) 0.07 ms (1%), render 2.25 ms (43%) — kiss3d 0.45 wgpu path tracer, headless + transform-only TLAS fast path (per-frame BLAS re-bake eliminated — vs laptop&#x27;s 242 ms/frame)">
   <span class="bar-label">Nexus<span class="sub"> 480x368 @ 64 spp</span></span>
   <span class="bar-track"><span class="bar seg-physics" style="width:1.38%"></span><span class="bar seg-sync" style="width:0.03%"></span><span class="bar seg-render" style="width:1.08%"></span></span>
@@ -336,6 +341,7 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 <tr><td>MuJoCo</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>424,773</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
 <tr><td>mjlab (MuJoCo-Warp)</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>6,549</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
 <tr><td>Genesis</td><td>Cube drop — Ray traced — shared tracer (Mitsuba)</td><td>89.4 *</td><td>11</td><td>—</td><td>3,560</td><td>480x360</td><td>96</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-13 (Mitsuba cuda_ad_rgb)</td></tr>
+<tr><td>Genesis (Nyx)</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>312</td><td>3.21</td><td>1.16 / — / 2.04</td><td>3,448</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 — the other rows on this panel were measured on 595.71.05.</td></tr>
 <tr><td>Nexus</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>192</td><td>5.20</td><td>2.88 / 0.07 / 2.25</td><td>—</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090); no-readback measured 2026-07-15</td></tr>
 <tr><td>Genesis</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>12.1 †</td><td>82</td><td>—</td><td>2,283</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-15 (idle GPU, headless RTX 5090)</td></tr>
 <tr><td>Isaac Sim</td><td>Cube drop — Ray traced — engine's own path tracer</td><td>4.8 †</td><td>209</td><td>—</td><td>1,099</td><td>480x368</td><td>64</td><td>NVIDIA GeForce RTX 5090</td><td>measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)</td></tr>
@@ -363,65 +369,17 @@ emptied — the first-ever-run / post-upgrade cost. Hover a bar for exact segmen
 </table></div></details>
 <h3>Videos</h3>
 <h2 class='scene'>Scene 1 — Cube drop (single rigid body)</h2>
-<h3>Rasterized (native renderer)</h3><div class='gallery'>
-<figure>
-  <video src="../cube_nexus_cuda_graph.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus (cuda-oxide + CUDA graph)</strong> <span class='badge'>489 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-<figure>
-  <video src="../cube_nexus.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus</strong> <span class='badge'>324 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-<figure>
-  <video src="../cube_nexus_cuda.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus (cuda-oxide)</strong> <span class='badge'>25.8 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-</div>
+
 <h3>Ray traced — engine's own path tracer</h3><div class='gallery'>
 <figure>
-  <video src="../cube_rt_nexus_native.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus</strong> <span class='badge'>192 fps</span>
+  <video src="../cube_rt_genesis_nyx.mp4" controls loop muted playsinline></video>
+  <figcaption><strong>Genesis (Nyx)</strong> <span class='badge'>312 fps</span>
   <span class="sub">480x368 @ 64 spp</span></figcaption>
 </figure>
 </div>
 <h2 class='scene'>Scene 2 — LeRobot bipedal platform (STL meshes, 12 DOF, PD stance hold)</h2>
-<h3>Rasterized (native renderer)</h3><div class='gallery'>
-<figure>
-  <video src="../../lerobot_legs/lerobot_mujoco_real.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>MuJoCo</strong> <span class='badge'>1,920 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-<figure>
-  <video src="../../lerobot_legs/lerobot_genesis.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Genesis</strong> <span class='badge'>128 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-<figure>
-  <video src="../../lerobot_legs/lerobot_nexus_cuda_graph.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus (cuda-oxide + CUDA graph)</strong> <span class='badge'>40.0 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-<figure>
-  <video src="../../lerobot_legs/lerobot_nexus.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus</strong> <span class='badge'>32.8 fps</span>
-  <span class="sub">640x480</span></figcaption>
-</figure>
-</div>
-<h3>Ray traced — engine's own path tracer</h3><div class='gallery'>
-<figure>
-  <video src="../../lerobot_legs/lerobot_nexus_rt_cuda_graph.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus (cuda-oxide + CUDA graph)</strong> <span class='badge'>41.2 fps</span>
-  <span class="sub">640x480 @ 32 spp</span></figcaption>
-</figure>
-<figure>
-  <video src="../../lerobot_legs/lerobot_nexus_rt.mp4" controls loop muted playsinline></video>
-  <figcaption><strong>Nexus</strong> <span class='badge'>35.4 fps</span>
-  <span class="sub">640x480 @ 32 spp</span></figcaption>
-</figure>
-</div>
+
+
 <h2 class='scene'>Scene 3 — LeRobot × 2,048 parallel envs (physics throughput, no rendering)</h2>
 
 <h2 class='scene'>Startup — time to first physics step (LeRobot scene, single env)</h2>

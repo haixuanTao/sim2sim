@@ -383,6 +383,26 @@
           "readback_negligible": true,
           "source": "measured 2026-07-16 (idle GPU, headless RTX 5090, Isaac Sim 6.0.1.0)",
           "pipeline": "PhysX PD stance hold (max joint deviation 0.038 rad) + RTX PathTracing \u2014 Isaac Sim 6.0.1.0; URDF import ported to 6.0's convert-then-reference flow. Quasi-static scene, so RTX accumulation survives across frames \u2014 see the cube RT row for what per-frame motion costs this renderer."
+        },
+        {
+          "backend": "genesis_nyx",
+          "mode": "rt_native",
+          "fps": 293.6,
+          "fps_nocapture": 312.0,
+          "ms_per_frame": 3,
+          "resolution": "480x368",
+          "spp": 64,
+          "physics_steps_s": 3448,
+          "segments": {
+            "physics": 1.16,
+            "sync": 0.0,
+            "render": 2.04,
+            "readback": 0.2
+          },
+          "segments_source": "measured 2026-07-16",
+          "source": "measured 2026-07-16 (idle GPU, headless RTX 5090); median of 3. NOTE: driver 580.159.03 \u2014 the other rows on this panel were measured on 595.71.05.",
+          "pipeline": "Genesis GPU physics + Nyx path tracer (gs-nyx-plugin 0.1.4 on genesis git-main, torch cu128), CUDA-resident uint8 output. ~24x the from-source LuisaRender rt_native row at identical 480x368/64 spp on this box \u2014 that row's NVRTC sm_120 PTX fallback likely understates it, so treat 24x as an upper bound. Scene defines no light/env map (the plugin warns), so tracing is cheaper than a lit scene.",
+          "video": "cube_rt_genesis_nyx.mp4"
         }
       ]
     },
