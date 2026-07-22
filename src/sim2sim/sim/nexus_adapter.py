@@ -81,6 +81,10 @@ class NexusSimulator(Simulator):
         self._total_dofs = 0
         self._mjcf_path = ""
         self._total_mass = 1.0
+        # Canonical (robot_cfg.joint_names, alphabetical) -> tree-order index.
+        # Nexus link rows and generalized DOFs follow MJCF body-tree order,
+        # which differs from the canonical order on tree-shaped robots.
+        self._tree_from_canon: np.ndarray | None = None
 
     @staticmethod
     def is_available() -> bool:
@@ -118,6 +122,10 @@ class NexusSimulator(Simulator):
         self.pipeline.preload_pipelines_headless(self.backend)
         self.timestamps = nx.GpuTimestamps.headless(self.backend, 2048)
 
+        tree = _tree_joint_names(self._mjcf_path)
+        self._tree_from_canon = np.array(
+            [tree.index(n) for n in robot_cfg.joint_names], dtype=int
+        )
         self._build_state()
 
     def _build_state(self) -> None:
@@ -127,7 +135,11 @@ class NexusSimulator(Simulator):
         nx = self._nx
         state = nx.NexusState()
         state.set_rbd_dt(self._dt)
-        state.insert_mjcf_headless(self._mjcf_path)
+        # The eval MJCFs place the floating root at z=0 and rely on the backend
+        # to set the initial base height; nexus has no post-load teleport, so
+        # load a patched copy with the root body raised to base_height_init.
+        with _spawn_height_mjcf(self._mjcf_path, self.robot_cfg.base_height_init) as path:
+            state.insert_mjcf_headless(path)
         state.finalize_headless(self.backend)
         state.set_rbd_gravity_headless(self.backend, nx.Vec3(0.0, 0.0, -9.81))
         self.state = state
@@ -139,6 +151,14 @@ class NexusSimulator(Simulator):
         # actuated joints in link order. (n_dof actuated -> total - n_dof base.)
         self._n_base_dofs = max(0, self._total_dofs - n_dof)
         self._sim_time = 0.0
+        # Locate the free base's row in body_poses: rigid-body order is not
+        # root-first in this engine, so find the body sitting at the spawn pose
+        # (identity rotation, base_height_init) right after the scene build.
+        poses = np.asarray(state.body_poses(self.backend), dtype=np.float32)
+        target = np.array([0.0, 0.0, self.robot_cfg.base_height_init], dtype=np.float32)
+        pos_err = np.linalg.norm(poses[:, 0:3] - target, axis=1)
+        rot_err = 1.0 - np.abs(poses[:, 6])  # |qw| ~ 1 at identity
+        self._base_row = int(np.argmin(pos_err + rot_err))
 
     @property
     def dt(self) -> float:
@@ -168,7 +188,7 @@ class NexusSimulator(Simulator):
         # torques in canonical order (== link order). Persists across substeps
         # until the next apply_torques, matching the runner's control loop.
         gen = np.zeros(self._total_dofs, dtype=np.float32)
-        gen[self._n_base_dofs : self._n_base_dofs + tau.shape[0]] = tau
+        gen[self._n_base_dofs + self._tree_from_canon] = tau
         self.state.set_multibody_gen_forces_headless(self.backend, 0, gen.tolist())
 
     def step(self) -> None:
@@ -179,9 +199,9 @@ class NexusSimulator(Simulator):
         n_dof = self.robot_cfg.n_dof
 
         poses = np.asarray(self.state.body_poses(self.backend), dtype=np.float32)
-        # body 0 is the multibody root (base). Row = [tx,ty,tz, qx,qy,qz,qw].
-        base_pos = poses[0, 0:3].astype(np.float32)
-        qx, qy, qz, qw = (float(v) for v in poses[0, 3:7])
+        # Base row located at build time. Row = [tx,ty,tz, qx,qy,qz,qw].
+        base_pos = poses[self._base_row, 0:3].astype(np.float32)
+        qx, qy, qz, qw = (float(v) for v in poses[self._base_row, 3:7])
         quat = np.array([qw, qx, qy, qz], dtype=np.float32)  # -> (w, x, y, z)
 
         dof_vel = np.asarray(self.state.dof_velocities(self.backend), dtype=np.float32)
@@ -190,7 +210,7 @@ class NexusSimulator(Simulator):
         # follow in link order.
         base_lin_world = dof_vel[0:3]
         base_ang_world = dof_vel[3:6]
-        joint_vel = dof_vel[self._n_base_dofs : self._n_base_dofs + n_dof].astype(np.float32)
+        joint_vel = dof_vel[self._n_base_dofs + self._tree_from_canon].astype(np.float32)
         base_lin_vel, base_ang_vel = world_velocities_to_base(
             quat, base_lin_world, base_ang_world
         )
@@ -200,7 +220,7 @@ class NexusSimulator(Simulator):
         # the joint's local frame — column 3 for these hinges). Rows 1..n_dof are
         # the actuated links in canonical order.
         coords = np.asarray(self.state.link_coords(self.backend), dtype=np.float32)
-        joint_ang = coords[1 : 1 + n_dof, 3:6]
+        joint_ang = coords[1 + self._tree_from_canon, 3:6]
         joint_pos = joint_ang.sum(axis=1).astype(np.float32)  # one non-zero axis per hinge
 
         return RobotState(
@@ -219,6 +239,87 @@ class NexusSimulator(Simulator):
         self.pipeline = None
         self.backend = None
         self.timestamps = None
+
+
+def _tree_joint_names(mjcf_path: str) -> list[str]:
+    """Hinge-joint names in MJCF body-tree order — the multibody link/DOF order
+    nexus uses (link row = 1 + tree index; gen-force DOF = base DOFs + index)."""
+    import mujoco
+
+    model = mujoco.MjModel.from_xml_path(mjcf_path)
+    return [
+        model.joint(j).name
+        for j in range(model.njnt)
+        if model.jnt_type[j] == mujoco.mjtJoint.mjJNT_HINGE
+    ]
+
+
+import contextlib
+import os
+import xml.etree.ElementTree as ET
+
+
+@contextlib.contextmanager
+def _spawn_height_mjcf(mjcf_path: str, height: float):
+    """Yield a path to a copy of the MJCF with the free-root body raised to
+    ``height``. The copy lives next to the original so relative ``<include>``
+    paths keep resolving; it is removed on exit."""
+
+    def find_free_root(tree):
+        for body in tree.getroot().iter("body"):
+            if body.find("freejoint") is not None or any(
+                j.get("type") == "free" for j in body.findall("joint")
+            ):
+                return body
+        return None
+
+    def raise_root(body):
+        pos = [float(v) for v in (body.get("pos") or "0 0 0").split()]
+        pos[2] = height
+        body.set("pos", f"{pos[0]} {pos[1]} {pos[2]}")
+
+    def tmp_name(path):
+        return os.path.join(
+            os.path.dirname(path), f".nexus_spawn_{os.getpid()}_{os.path.basename(path)}"
+        )
+
+    base_dir = os.path.dirname(mjcf_path)
+    scene = ET.parse(mjcf_path)
+    tmp_files = []
+    root_body = find_free_root(scene)
+    if root_body is not None:
+        raise_root(root_body)
+    else:
+        # The free root may live in an <include>d file: patch a copy of that
+        # file and repoint the include in the scene copy.
+        for inc in scene.getroot().iter("include"):
+            inc_path = os.path.join(base_dir, inc.get("file", ""))
+            if not os.path.isfile(inc_path):
+                continue
+            sub = ET.parse(inc_path)
+            body = find_free_root(sub)
+            if body is None:
+                continue
+            raise_root(body)
+            sub_out = tmp_name(inc_path)
+            sub.write(sub_out)
+            tmp_files.append(sub_out)
+            inc.set("file", os.path.basename(sub_out))
+            root_body = body
+            break
+    if root_body is None:
+        # No free root anywhere; the robot spawns at the MJCF pose.
+        yield mjcf_path
+        return
+    out = tmp_name(mjcf_path)
+    scene.write(out)
+    tmp_files.append(out)
+    try:
+        yield out
+    finally:
+        for f in tmp_files:
+            with contextlib.suppress(OSError):
+                os.remove(f)
 
 
 def _estimate_total_mass(mjcf_path: str) -> float:
